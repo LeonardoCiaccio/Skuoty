@@ -74,7 +74,7 @@ async function callGemini(prompt: string, cfg: { apiKey: string; model: string }
         generationConfig: { temperature: 0.3 },
       }),
     },
-  )
+  ))
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as { error?: { message?: string } }
     throw new AIError('errApi', err?.error?.message ?? `Gemini ${res.status}`)
