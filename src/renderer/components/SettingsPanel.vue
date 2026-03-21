@@ -205,12 +205,12 @@
           <!-- Capture key -->
           <div class="flex flex-col gap-1">
             <label class="text-xs text-[var(--text-muted)]">{{ t('captureKey') }}</label>
-            <p class="text-xs text-[var(--text-faint)] mb-1">Double press: {{ settings.hotkeys.capture }}</p>
+            <p class="text-xs text-[var(--text-faint)] mb-1">{{ t('doublePress') }}: {{ settings.hotkeys.capture }}</p>
             <button
               @click="startRecording('capture')"
               :class="['field text-left w-full', recording === 'capture' ? 'border-[#6366f1] text-[var(--text-muted)] animate-pulse' : '']"
             >
-              {{ recording === 'capture' ? t('pressKeys') : settings.hotkeys.capture }}
+              {{ recording === 'capture' ? t('pressKeys') : `${settings.hotkeys.capture} + ${settings.hotkeys.capture}` }}
             </button>
           </div>
 
@@ -223,7 +223,7 @@
             >
               {{ recording === 'showWindow' ? t('pressKeys') : (settings.hotkeys.showWindow || '—') }}
             </button>
-            <p class="text-xs text-[var(--text-faint)]">Esc to clear</p>
+            <p class="text-xs text-[var(--text-faint)]">{{ t('escToClear') }}</p>
           </div>
         </div>
       </template>
@@ -431,18 +431,24 @@ function startRecording(field: 'capture' | 'showWindow') {
   window.addEventListener('keydown', onKeyDown, { capture: true })
 }
 
+const KEY_NAMES: Record<string, string> = {
+  ' ': 'Space', 'ArrowUp': 'Up', 'ArrowDown': 'Down',
+  'ArrowLeft': 'Left', 'ArrowRight': 'Right',
+  'Enter': 'Return', 'Delete': 'Delete', 'Backspace': 'Backspace',
+  'Tab': 'Tab', 'Insert': 'Insert', 'Home': 'Home', 'End': 'End',
+  'PageUp': 'PageUp', 'PageDown': 'PageDown',
+}
+
 function onKeyDown(e: KeyboardEvent) {
   e.preventDefault()
   e.stopPropagation()
 
-  // Escape = cancel (for showWindow) or cancel
   if (e.key === 'Escape') {
     if (recording.value === 'showWindow') settings.value.hotkeys.showWindow = ''
     stopRecording()
     return
   }
 
-  // Ignore bare modifiers
   if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return
 
   const parts: string[] = []
@@ -450,7 +456,7 @@ function onKeyDown(e: KeyboardEvent) {
   if (e.altKey)   parts.push('Alt')
   if (e.shiftKey) parts.push('Shift')
 
-  const key = e.key.length === 1 ? e.key.toUpperCase() : e.key
+  const key = KEY_NAMES[e.key] ?? (e.key.length === 1 ? e.key.toUpperCase() : e.key)
   parts.push(key)
 
   const accelerator = parts.join('+')
