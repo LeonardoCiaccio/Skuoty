@@ -39,11 +39,24 @@ function writePasteScripts() {
     'using System.Runtime.InteropServices;',
     'public class SKPaste {',
     '    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);',
+    '    [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr h);',
+    '    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int n);',
+    '    [DllImport("user32.dll")] public static extern int  GetWindowThreadProcessId(IntPtr h, IntPtr p);',
+    '    [DllImport("kernel32.dll")] public static extern int GetCurrentThreadId();',
+    '    [DllImport("user32.dll")] public static extern bool AttachThreadInput(int a, int b, bool f);',
     '    [DllImport("user32.dll")] public static extern void keybd_event(byte a, byte b, int c, int d);',
     '}',
     '"@',
+    // AttachThreadInput trick: lets SetForegroundWindow work even when
+    // another window owns the foreground (Windows normally blocks this).
+    '$cur = [SKPaste]::GetCurrentThreadId()',
+    '$tgt = [SKPaste]::GetWindowThreadProcessId([IntPtr]$Hwnd, [IntPtr]::Zero)',
+    '[SKPaste]::AttachThreadInput($cur, $tgt, $true)',
+    '[SKPaste]::ShowWindow([IntPtr]$Hwnd, 9)',   // SW_RESTORE
     '[SKPaste]::SetForegroundWindow([IntPtr]$Hwnd)',
-    'Start-Sleep -Milliseconds 150',
+    '[SKPaste]::BringWindowToTop([IntPtr]$Hwnd)',
+    '[SKPaste]::AttachThreadInput($cur, $tgt, $false)',
+    'Start-Sleep -Milliseconds 200',
     '[SKPaste]::keybd_event(0x11,0,0,0)',   // CTRL down
     '[SKPaste]::keybd_event(0x56,0,0,0)',   // V down
     'Start-Sleep -Milliseconds 30',
