@@ -21,7 +21,7 @@
     <!-- Main content -->
     <template v-else>
       <TextPreview :text="selectionText" :max-chars="settings.previewMaxChars" />
-      <ElaboratedText v-model="elaboratedText" @copy="copyElaborated" @paste-back="pasteBack" />
+      <ElaboratedText v-model="elaboratedText" @paste-back="pasteBack" />
       <PluginPanel
         :selection-text="selectionText"
         :elaborated-text="elaboratedText"
@@ -66,10 +66,6 @@ onMounted(() => {
   window.skuoty.signalReady()
   window.skuoty.setLanguage(settings.value.language)
 })
-
-function copyElaborated() {
-  window.skuoty.copyToClipboard(elaboratedText.value)
-}
 
 function pasteBack() {
   window.skuoty.pasteBack(elaboratedText.value)

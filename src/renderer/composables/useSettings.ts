@@ -1,4 +1,4 @@
-import { ref, watch } from 'vue'
+import { ref, watchEffect } from 'vue'
 import { DEFAULT_SETTINGS } from '../../shared/types'
 import type { AppSettings } from '../../shared/types'
 
@@ -24,9 +24,11 @@ function loadFromStorage(): AppSettings {
 // Module-level singleton: all components share the same reactive state
 const settings = ref<AppSettings>(loadFromStorage())
 
-watch(settings, (s) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(s))
-}, { deep: true })
+// watchEffect tracks every reactive property accessed by JSON.stringify, so any
+// nested change (api key, plugin, language, …) automatically triggers a save.
+watchEffect(() => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings.value))
+})
 
 export function useSettings() {
   function exportSettings(): string {
