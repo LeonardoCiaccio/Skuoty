@@ -1,9 +1,10 @@
-import { app, BrowserWindow, ipcMain, clipboard, screen, Tray, Menu, nativeImage, dialog, globalShortcut } from 'electron'
+import { app, BrowserWindow, ipcMain, clipboard, screen, Tray, Menu, nativeImage, dialog } from 'electron'
 import { spawn, spawnSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import path from 'path'
 import { setupStore } from './store'
+import { setupHotkey } from './hotkey'
 import { IPC } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
@@ -150,25 +151,6 @@ function createTray() {
   })
 }
 
-// ─── Global shortcuts ─────────────────────────────────────────────────────────
-
-let lastCaptureTime = 0
-
-function registerHotkey() {
-  try {
-    globalShortcut.register('Ctrl+C', async () => {
-      const now = Date.now()
-      if (now - lastCaptureTime < 600) {
-        lastCaptureTime = 0
-        const text = clipboard.readText().trim()
-        if (text.length > 0) await showWindow(text)
-      } else {
-        lastCaptureTime = now
-      }
-    })
-    console.log('[hotkey] Ctrl+C+C registered')
-  } catch (e) { console.error('[hotkey] error:', e) }
-}
 
 // ─── Window ───────────────────────────────────────────────────────────────────
 
@@ -289,6 +271,6 @@ app.whenReady().then(() => {
   createWindow()
   createTray()
   setupIPC()
-  registerHotkey()
+  setupHotkey((text) => showWindow(text))
   console.log('[skuoty] ready — Ctrl+C+C to capture')
 })
