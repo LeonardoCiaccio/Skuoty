@@ -9,6 +9,7 @@ import { IPC } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
+let dialogOpen = false
 let rendererReady = false
 let isQuitting = false
 let currentLang = 'en'
@@ -173,7 +174,7 @@ function createWindow() {
 
   mainWindow.webContents.on('did-finish-load', () => { rendererReady = true })
   mainWindow.on('close', (e) => { if (!isQuitting) { e.preventDefault(); mainWindow?.hide() } })
-  mainWindow.on('blur', () => { mainWindow?.hide() })
+  mainWindow.on('blur', () => { if (!dialogOpen) mainWindow?.hide() })
 }
 
 function sendTextToRenderer(text: string) {
@@ -225,21 +226,26 @@ function setupIPC() {
   })
 
   ipcMain.handle(IPC.EXPORT_FILE, async (_e, json: string) => {
+    dialogOpen = true
     const { filePath, canceled } = await dialog.showSaveDialog({
       title: 'Export Skuoty settings', defaultPath: 'skuoty-backup.json',
       filters: [{ name: 'JSON', extensions: ['json'] }],
     })
-    if (canceled || !filePath) return false
-    writeFileSync(filePath, json, 'utf-8')
-    return true
+    dialogOpen = false
+    if (!canceled && filePath) writeFileSync(filePath, json, 'utf-8')
+    mainWindow?.show()
+    return !canceled && !!filePath
   })
 
   ipcMain.handle(IPC.IMPORT_FILE, async () => {
+    dialogOpen = true
     const { filePaths, canceled } = await dialog.showOpenDialog({
       title: 'Import Skuoty settings',
       filters: [{ name: 'JSON', extensions: ['json'] }],
       properties: ['openFile'],
     })
+    dialogOpen = false
+    mainWindow?.show()
     if (canceled || !filePaths[0]) return null
     return readFileSync(filePaths[0], 'utf-8')
   })
