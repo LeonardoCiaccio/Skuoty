@@ -7,12 +7,42 @@ import { IPC } from '../shared/types'
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 let rendererReady = false
+let isQuitting = false
+let currentLang = 'en'
 const isDev = process.env.NODE_ENV === 'development'
+
+const TRAY_LABELS: Record<string, { show: string; quit: string }> = {
+  en: { show: 'Show', quit: 'Quit' },
+  it: { show: 'Mostra', quit: 'Esci' },
+  es: { show: 'Mostrar', quit: 'Salir' },
+  fr: { show: 'Afficher', quit: 'Quitter' },
+  de: { show: 'Anzeigen', quit: 'Beenden' },
+}
 
 // Suppress harmless GPU cache errors on Windows
 app.commandLine.appendSwitch('disable-gpu-sandbox')
 app.commandLine.appendSwitch('disable-gpu-disk-cache')
 app.commandLine.appendSwitch('disk-cache-size', '0')
+
+function buildTrayMenu() {
+  const labels = TRAY_LABELS[currentLang] ?? TRAY_LABELS['en']
+  return Menu.buildFromTemplate([
+    {
+      label: labels.show,
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show()
+          mainWindow.focus()
+        }
+      },
+    },
+    { type: 'separator' },
+    {
+      label: labels.quit,
+      click: () => app.quit(),
+    },
+  ])
+}
 
 function createTray() {
   const iconPath = path.join(app.getAppPath(), 'assets/skuoty.png')
@@ -24,25 +54,7 @@ function createTray() {
   }
   tray = new Tray(icon)
   tray.setToolTip('Skuoty')
-
-  const menu = Menu.buildFromTemplate([
-    {
-      label: 'Show',
-      click: () => {
-        if (mainWindow) {
-          mainWindow.show()
-          mainWindow.focus()
-        }
-      },
-    },
-    { type: 'separator' },
-    {
-      label: 'Quit',
-      click: () => app.quit(),
-    },
-  ])
-
-  tray.setContextMenu(menu)
+  tray.setContextMenu(buildTrayMenu())
 
   // Left click on tray icon also shows the window
   tray.on('click', () => {
@@ -88,10 +100,12 @@ function createWindow() {
     rendererReady = true
   })
 
-  // Hide to tray instead of closing
+  // Hide to tray instead of closing (unless quitting)
   mainWindow.on('close', (e) => {
-    e.preventDefault()
-    mainWindow?.hide()
+    if (!isQuitting) {
+      e.preventDefault()
+      mainWindow?.hide()
+    }
   })
 
   mainWindow.on('blur', () => {
@@ -171,11 +185,17 @@ function setupIPC() {
     const store = setupStore()
     store.set('settings', settings)
   })
+
+  ipcMain.on(IPC.LANGUAGE_CHANGED, (_event, lang: string) => {
+    currentLang = lang
+    if (tray) tray.setContextMenu(buildTrayMenu())
+  })
 }
 
 app.whenReady().then(() => {
   // Prevent app from closing when all windows are closed (live in tray)
   app.on('window-all-closed', () => { /* stay in tray */ })
+  app.on('before-quit', () => { isQuitting = true })
 
   createWindow()
   createTray()

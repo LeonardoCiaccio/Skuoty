@@ -48,6 +48,11 @@ watch(() => settings.value.theme, (t) => {
   document.documentElement.dataset.theme = t
 }, { immediate: true })
 
+// Keep tray menu labels in sync with language
+watch(() => settings.value.language, (lang) => {
+  window.skuoty.setLanguage(lang)
+})
+
 const selectionText  = ref('')
 const elaboratedText = ref('')
 const showSettings   = ref(false)
@@ -59,6 +64,7 @@ onMounted(() => {
     showSettings.value   = false
   })
   window.skuoty.signalReady()
+  window.skuoty.setLanguage(settings.value.language)
 })
 
 function copyElaborated() {

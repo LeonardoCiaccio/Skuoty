@@ -11,6 +11,7 @@ declare global {
       getSettings: () => Promise<AppSettings>
       setSettings: (settings: AppSettings) => void
       signalReady: () => void
+      setLanguage: (lang: string) => void
     }
   }
 }

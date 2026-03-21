@@ -7,6 +7,7 @@ const IPC_PASTE_BACK = 'paste:back'
 const IPC_SETTINGS_GET = 'settings:get'
 const IPC_SETTINGS_SET = 'settings:set'
 const IPC_RENDERER_READY = 'renderer:ready'
+const IPC_LANGUAGE_CHANGED = 'language:changed'
 
 const { contextBridge, ipcRenderer } = require('electron') as typeof import('electron')
 
@@ -34,4 +35,5 @@ contextBridge.exposeInMainWorld('skuoty', {
   getSettings: () => ipcRenderer.invoke(IPC_SETTINGS_GET),
   setSettings: (settings: unknown) => ipcRenderer.send(IPC_SETTINGS_SET, settings),
   signalReady: () => ipcRenderer.send(IPC_RENDERER_READY),
+  setLanguage: (lang: string) => ipcRenderer.send(IPC_LANGUAGE_CHANGED, lang),
 })

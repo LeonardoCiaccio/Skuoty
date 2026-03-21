@@ -8,6 +8,7 @@ export const IPC = {
   SETTINGS_SET:       'settings:set',
   WINDOW_SHOW:        'window:show',
   WINDOW_HIDE:        'window:hide',
+  LANGUAGE_CHANGED:   'language:changed',
 } as const
 
 // ─── i18n ──────────────────────────────────────────────────────────────────────
