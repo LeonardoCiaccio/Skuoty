@@ -20,21 +20,12 @@
 
     <!-- Main content -->
     <template v-else>
-      <!-- Text preview -->
       <TextPreview :text="selectionText" :max-chars="settings.previewMaxChars" />
-
-      <!-- Elaborated output -->
       <ElaboratedText v-model="elaboratedText" @copy="copyElaborated" @paste-back="pasteBack" />
-
-      <!-- Plugin panel -->
       <PluginPanel
         :selection-text="selectionText"
         :elaborated-text="elaboratedText"
-        :api-key="settings.geminiApiKey"
-        :model="settings.geminiModel"
-        :plugin-configs="settings.plugins"
         @result="elaboratedText = $event"
-        @update:plugin-config="updatePluginConfig"
       />
     </template>
 
@@ -44,29 +35,24 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { Cog6ToothIcon } from '@heroicons/vue/24/outline'
-import TextPreview from './components/TextPreview.vue'
+import TextPreview    from './components/TextPreview.vue'
 import ElaboratedText from './components/ElaboratedText.vue'
-import PluginPanel from './components/PluginPanel.vue'
-import SettingsPanel from './components/SettingsPanel.vue'
+import PluginPanel    from './components/PluginPanel.vue'
+import SettingsPanel  from './components/SettingsPanel.vue'
 import { useSettings } from './composables/useSettings'
 
-const { settings, load } = useSettings()
+const { settings } = useSettings()
 
-const selectionText = ref('')
+const selectionText  = ref('')
 const elaboratedText = ref('')
-const showSettings = ref(false)
+const showSettings   = ref(false)
 
-onMounted(async () => {
-  await load()
-
+onMounted(() => {
   window.skuoty.onClipboardCaptured((text) => {
-    console.log('[app] clipboard received, len=', text?.length, 'text=', text?.slice(0, 30))
-    selectionText.value = text
+    selectionText.value  = text
     elaboratedText.value = ''
-    showSettings.value = false
+    showSettings.value   = false
   })
-
-  // Tell main process the renderer is ready to receive events
   window.skuoty.signalReady()
 })
 
@@ -76,12 +62,5 @@ function copyElaborated() {
 
 function pasteBack() {
   window.skuoty.pasteBack(elaboratedText.value)
-}
-
-function updatePluginConfig(pluginId: string, config: Record<string, string>) {
-  settings.value.plugins = {
-    ...settings.value.plugins,
-    [pluginId]: config,
-  }
 }
 </script>

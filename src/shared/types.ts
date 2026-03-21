@@ -1,90 +1,83 @@
-// ─── Plugin System ────────────────────────────────────────────────────────────
-
-/**
- * Defines which text source a plugin uses as input.
- * - 'selection' : the raw text copied by the user (Ctrl+C)
- * - 'elaborated': the output currently shown in the elaborated textarea
- */
-export type PluginInputSource = 'selection' | 'elaborated'
-
-/**
- * A single configurable field inside a plugin's settings panel.
- */
-export interface PluginField {
-  key: string
-  label: string
-  type: 'text' | 'textarea' | 'select' | 'number'
-  placeholder?: string
-  options?: { value: string; label: string }[] // for type 'select'
-  default?: string | number
-}
-
-/**
- * The contract every Skuoty plugin must implement.
- * Drop a file that exports a default object conforming to this interface
- * inside src/renderer/plugins/ and it will be picked up automatically.
- */
-export interface SkuotyPlugin {
-  /** Unique machine-readable id, e.g. 'translator' */
-  id: string
-  /** Human-readable name shown in the UI */
-  name: string
-  /** Short description */
-  description: string
-  /** Which text the plugin reads as input */
-  inputSource: PluginInputSource
-  /** Configurable fields rendered in the plugin panel */
-  fields: PluginField[]
-  /**
-   * Called when the user triggers the plugin.
-   * @param input   The text to process (from inputSource)
-   * @param config  Values filled in by the user for this plugin's fields
-   * @param apiKey  The Gemini API key from global settings
-   * @param model   The Gemini model id from global settings
-   * @returns       The processed text to show in the elaborated area
-   */
-  run(input: string, config: Record<string, string>, apiKey: string, model: string): Promise<string>
-}
-
 // ─── IPC Channels ─────────────────────────────────────────────────────────────
-
 export const IPC = {
-  /** Renderer → Main: renderer Vue app is mounted and ready to receive events */
-  RENDERER_READY: 'renderer:ready',
-  /** Main → Renderer: clipboard text captured after double Ctrl+C */
+  RENDERER_READY:     'renderer:ready',
   CLIPBOARD_CAPTURED: 'clipboard:captured',
-  /** Renderer → Main: paste elaborated text into previous window */
-  PASTE_BACK: 'paste:back',
-  /** Renderer → Main: copy text to clipboard */
-  COPY_TO_CLIPBOARD: 'clipboard:copy',
-  /** Renderer ↔ Main: read/write persistent settings */
-  SETTINGS_GET: 'settings:get',
-  SETTINGS_SET: 'settings:set',
-  /** Main → Renderer: show/hide window */
-  WINDOW_SHOW: 'window:show',
-  WINDOW_HIDE: 'window:hide',
+  PASTE_BACK:         'paste:back',
+  COPY_TO_CLIPBOARD:  'clipboard:copy',
+  SETTINGS_GET:       'settings:get',
+  SETTINGS_SET:       'settings:set',
+  WINDOW_SHOW:        'window:show',
+  WINDOW_HIDE:        'window:hide',
 } as const
 
-// ─── Settings ─────────────────────────────────────────────────────────────────
+// ─── i18n ──────────────────────────────────────────────────────────────────────
+/** One locale entry, e.g. {"en":"Translator"} or {"it":"Traduttore"} */
+export type LocalizedLabel = Record<string, string>
 
+/** Returns the label in `lang`, falling back to "en". */
+export function getLabel(labels: LocalizedLabel[], lang: string): string {
+  const hit = labels.find((l) => l[lang])
+  if (hit) return hit[lang]
+  const fallback = labels.find((l) => l['en'])
+  return fallback ? fallback['en'] : ''
+}
+
+// ─── Plugin ────────────────────────────────────────────────────────────────────
+export interface PluginOption {
+  label: LocalizedLabel[]
+  value: string
+}
+
+/**
+ * A Skuoty plugin is a plain JSON object.
+ * - options: array  → dropdown shown to user; {{option}} = selected value
+ * - options: string → no UI; {{option}} = the string itself
+ * - {{context}} in prompt = the text to process (output if present, else selection)
+ */
+export interface SkuotyPlugin {
+  name:    string
+  label:   LocalizedLabel[]
+  options: PluginOption[] | string
+  prompt:  string
+  enabled: boolean
+}
+
+// ─── AI Providers ──────────────────────────────────────────────────────────────
+export type AIProvider = 'gemini' | 'ollama' | 'openrouter' | 'anthropic' | 'openai'
+
+export interface GeminiConfig     { apiKey: string; model: string }
+export interface OllamaConfig     { baseUrl: string; model: string }
+export interface OpenRouterConfig { apiKey: string; model: string }
+export interface AnthropicConfig  { apiKey: string; model: string }
+export interface OpenAIConfig     { apiKey: string; model: string }
+
+export interface AIProviderConfigs {
+  gemini:     GeminiConfig
+  ollama:     OllamaConfig
+  openrouter: OpenRouterConfig
+  anthropic:  AnthropicConfig
+  openai:     OpenAIConfig
+}
+
+// ─── App Settings ──────────────────────────────────────────────────────────────
 export interface AppSettings {
-  geminiApiKey: string
-  geminiModel: string
-  /** Per-plugin config keyed by plugin id */
-  plugins: Record<string, Record<string, string>>
-  /** Max chars shown in preview */
+  language:        string
+  aiProvider:      AIProvider
+  providers:       AIProviderConfigs
+  plugins:         SkuotyPlugin[]
   previewMaxChars: number
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  geminiApiKey: '',
-  geminiModel: 'gemini-2.0-flash',
-  plugins: {},
+  language:   'en',
+  aiProvider: 'gemini',
+  providers: {
+    gemini:     { apiKey: '',                        model: 'gemini-2.0-flash' },
+    ollama:     { baseUrl: 'http://localhost:11434', model: 'llama3.2' },
+    openrouter: { apiKey: '',                        model: 'openai/gpt-4o-mini' },
+    anthropic:  { apiKey: '',                        model: 'claude-haiku-4-5-20251001' },
+    openai:     { apiKey: '',                        model: 'gpt-4o-mini' },
+  },
+  plugins:         [],
   previewMaxChars: 200,
 }
-
-export const GEMINI_MODELS = [
-  { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (fast)' },
-  { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro (powerful)' },
-  { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-]

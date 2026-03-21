@@ -1,26 +1,51 @@
 import { ref, watch } from 'vue'
-import { AppSettings, DEFAULT_SETTINGS } from '../../shared/types'
+import { DEFAULT_SETTINGS } from '../../shared/types'
+import type { AppSettings } from '../../shared/types'
 
-const settings = ref<AppSettings>({ ...DEFAULT_SETTINGS })
-let loaded = false
+const STORAGE_KEY = 'skuoty-settings'
+
+function loadFromStorage(): AppSettings {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return structuredClone(DEFAULT_SETTINGS)
+    const parsed = JSON.parse(raw) as Partial<AppSettings>
+    return {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      providers: { ...DEFAULT_SETTINGS.providers, ...(parsed.providers ?? {}) },
+      plugins: parsed.plugins ?? [],
+    }
+  } catch {
+    return structuredClone(DEFAULT_SETTINGS)
+  }
+}
+
+// Module-level singleton: all components share the same reactive state
+const settings = ref<AppSettings>(loadFromStorage())
+
+watch(settings, (s) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(s))
+}, { deep: true })
 
 export function useSettings() {
-  async function load() {
-    if (loaded) return
-    loaded = true
+  function exportSettings(): string {
+    return JSON.stringify(settings.value, null, 2)
+  }
+
+  function importSettings(json: string): string | null {
     try {
-      const s = await window.skuoty.getSettings()
-      settings.value = s ?? { ...DEFAULT_SETTINGS }
-    } catch {
-      settings.value = { ...DEFAULT_SETTINGS }
+      const parsed = JSON.parse(json) as Partial<AppSettings>
+      settings.value = {
+        ...DEFAULT_SETTINGS,
+        ...parsed,
+        providers: { ...DEFAULT_SETTINGS.providers, ...(parsed.providers ?? {}) },
+        plugins: parsed.plugins ?? [],
+      }
+      return null
+    } catch (e) {
+      return e instanceof Error ? e.message : 'Invalid JSON'
     }
   }
 
-  function save() {
-    window.skuoty.setSettings(settings.value)
-  }
-
-  watch(settings, save, { deep: true })
-
-  return { settings, load, save }
+  return { settings, exportSettings, importSettings }
 }
