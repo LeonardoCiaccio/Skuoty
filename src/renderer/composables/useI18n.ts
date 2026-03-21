@@ -6,7 +6,7 @@ const STRINGS: Record<string, Record<string, string>> = {
     // Main window
     selection:        'Selection',
     output:           'Output',
-    selectionHint:    'Select text and press Ctrl+C twice to start',
+    selectionHint:    'Select text and press Ctrl+C+C to start',
     outputPlaceholder:'Processed text will appear here…',
     copyOutput:       'Copy output',
     pasteBack:        'Paste back to source',
@@ -45,7 +45,7 @@ const STRINGS: Record<string, Record<string, string>> = {
   it: {
     selection:        'Selezione',
     output:           'Output',
-    selectionHint:    'Seleziona del testo e premi Ctrl+C due volte per iniziare',
+    selectionHint:    'Seleziona del testo e premi Ctrl+C+C per iniziare',
     outputPlaceholder:'Il testo elaborato apparirà qui…',
     copyOutput:       'Copia output',
     pasteBack:        'Incolla nella finestra di origine',
@@ -82,7 +82,7 @@ const STRINGS: Record<string, Record<string, string>> = {
   },
   es: {
     selection: 'Selección', output: 'Salida',
-    selectionHint: 'Selecciona texto y pulsa Ctrl+C dos veces para empezar',
+    selectionHint: 'Selecciona texto y pulsa Ctrl+C+C para empezar',
     outputPlaceholder: 'El texto procesado aparecerá aquí…',
     copyOutput: 'Copiar salida', pasteBack: 'Pegar en origen',
     noPlugins: 'Sin plugins — añade uno en Ajustes.',
@@ -101,7 +101,7 @@ const STRINGS: Record<string, Record<string, string>> = {
   },
   fr: {
     selection: 'Sélection', output: 'Résultat',
-    selectionHint: 'Sélectionnez du texte et appuyez deux fois sur Ctrl+C pour commencer',
+    selectionHint: 'Sélectionnez du texte et appuyez sur Ctrl+C+C pour commencer',
     outputPlaceholder: 'Le texte traité apparaîtra ici…',
     copyOutput: 'Copier le résultat', pasteBack: 'Coller dans la source',
     noPlugins: 'Aucun plugin — ajoutez-en un dans les Paramètres.',
@@ -120,7 +120,7 @@ const STRINGS: Record<string, Record<string, string>> = {
   },
   de: {
     selection: 'Auswahl', output: 'Ausgabe',
-    selectionHint: 'Text auswählen und zweimal Strg+C drücken',
+    selectionHint: 'Text auswählen und Strg+C+C drücken',
     outputPlaceholder: 'Verarbeiteter Text erscheint hier…',
     copyOutput: 'Ausgabe kopieren', pasteBack: 'Zurück einfügen',
     noPlugins: 'Keine Plugins — füge eines in den Einstellungen hinzu.',
