@@ -21,7 +21,7 @@
     <!-- Main content -->
     <template v-else>
       <TextPreview :text="selectionText" :max-chars="settings.previewMaxChars" />
-      <ElaboratedText v-model="elaboratedText" @paste-back="pasteBack" />
+      <ElaboratedText v-model="elaboratedText" :has-target="hasTarget" @paste-back="pasteBack" />
       <PluginPanel
         :selection-text="selectionText"
         :elaborated-text="elaboratedText"
@@ -56,6 +56,7 @@ watch(() => settings.value.language, (lang) => {
 const selectionText  = ref('')
 const elaboratedText = ref('')
 const showSettings   = ref(false)
+const hasTarget      = ref(false)
 
 onMounted(() => {
   init()
@@ -63,6 +64,7 @@ onMounted(() => {
     selectionText.value  = text
     elaboratedText.value = ''
     showSettings.value   = false
+    hasTarget.value      = true
   })
   window.skuoty.signalReady()
   window.skuoty.setLanguage(settings.value.language)
@@ -70,5 +72,8 @@ onMounted(() => {
 
 function pasteBack() {
   window.skuoty.pasteBack(elaboratedText.value)
+  hasTarget.value      = false
+  selectionText.value  = ''
+  elaboratedText.value = ''
 }
 </script>

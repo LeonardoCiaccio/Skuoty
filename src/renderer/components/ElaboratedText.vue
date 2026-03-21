@@ -22,6 +22,7 @@
           <ClipboardDocumentIcon v-else class="w-3.5 h-3.5" />
         </button>
         <button
+          v-if="hasTarget"
           @click="$emit('paste-back')"
           :disabled="!modelValue"
           class="p-1.5 rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-second)] hover:text-[var(--text-primary)] transition-colors"
@@ -39,7 +40,7 @@ import { ref } from 'vue'
 import { ClipboardDocumentIcon, ClipboardDocumentCheckIcon, ArrowUturnLeftIcon } from '@heroicons/vue/24/outline'
 import { useI18n } from '../composables/useI18n'
 
-const props = defineProps<{ modelValue: string }>()
+const props = defineProps<{ modelValue: string; hasTarget: boolean }>()
 defineEmits<{
   'update:modelValue': [value: string]
   'paste-back': []

@@ -5,7 +5,9 @@
       v-for="plugin in enabledPlugins"
       :key="plugin.name"
       @click="openPopup(plugin)"
-      class="px-3 py-1.5 rounded text-xs font-medium bg-[var(--bg-element)] text-[var(--text-second)] hover:bg-[#6366f1] hover:text-white transition-colors"
+      :disabled="!context"
+      :title="!context ? t('noContextHint') : undefined"
+      class="px-3 py-1.5 rounded text-xs font-medium bg-[var(--bg-element)] text-[var(--text-second)] hover:bg-[#6366f1] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--bg-element)] disabled:hover:text-[var(--text-second)]"
     >
       {{ getLabel(plugin.label, settings.language) }}
     </button>
