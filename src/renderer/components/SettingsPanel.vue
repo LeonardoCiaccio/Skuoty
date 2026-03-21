@@ -231,6 +231,11 @@
               @click="applyHotkeys"
               class="btn-primary text-xs px-3 py-1.5"
             >{{ t('save') }}</button>
+            <button
+              @click="resetHotkeys"
+              class="btn-secondary text-xs px-3 py-1.5"
+              :title="t('reset')"
+            >↺ {{ t('reset') }}</button>
             <span v-if="hotkeySaved" class="text-xs text-emerald-500">✓ {{ t('applied') }}</span>
           </div>
         </div>
@@ -518,10 +523,17 @@ const hotkeySaved  = ref(false)
 const hotkeyDirty  = ref(false)
 
 function applyHotkeys() {
+  clearTimeout(firstPressTimer)
+  firstPress = ''
   window.skuoty.setHotkeys(settings.value.hotkeys)
   hotkeyDirty.value = false
   hotkeySaved.value = true
   setTimeout(() => { hotkeySaved.value = false }, 2000)
+}
+
+function resetHotkeys() {
+  settings.value.hotkeys = { ...DEFAULT_SETTINGS.hotkeys }
+  applyHotkeys()
 }
 
 onUnmounted(() => stopRecording())

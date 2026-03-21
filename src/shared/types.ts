@@ -93,7 +93,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   plugins:         [],
   previewMaxChars: 200,
   hotkeys: {
-    capture:    'Ctrl+Shift+C',
+    capture:    '2x:Ctrl+C',
     showWindow: 'Ctrl+Shift+Space',
   },
 }
