@@ -227,11 +227,13 @@ function setupIPC() {
 
   ipcMain.handle(IPC.EXPORT_FILE, async (_e, json: string) => {
     dialogOpen = true
+    mainWindow?.setAlwaysOnTop(false)
     const { filePath, canceled } = await dialog.showSaveDialog({
       title: 'Export Skuoty settings', defaultPath: 'skuoty-backup.json',
       filters: [{ name: 'JSON', extensions: ['json'] }],
     })
     dialogOpen = false
+    mainWindow?.setAlwaysOnTop(true)
     if (!canceled && filePath) writeFileSync(filePath, json, 'utf-8')
     mainWindow?.show()
     return !canceled && !!filePath
@@ -239,12 +241,14 @@ function setupIPC() {
 
   ipcMain.handle(IPC.IMPORT_FILE, async () => {
     dialogOpen = true
+    mainWindow?.setAlwaysOnTop(false)
     const { filePaths, canceled } = await dialog.showOpenDialog({
       title: 'Import Skuoty settings',
       filters: [{ name: 'JSON', extensions: ['json'] }],
       properties: ['openFile'],
     })
     dialogOpen = false
+    mainWindow?.setAlwaysOnTop(true)
     mainWindow?.show()
     if (canceled || !filePaths[0]) return null
     return readFileSync(filePaths[0], 'utf-8')
