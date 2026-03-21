@@ -82,6 +82,14 @@
               <input type="radio" :value="p.id" v-model="settings.aiProvider" class="accent-[#6366f1]" />
               <span class="text-xs font-medium text-[var(--text-primary)] flex-1">{{ p.name }}</span>
 
+              <!-- Reset button -->
+              <button
+                @click="resetProvider(p.id)"
+                :disabled="settings.aiProvider !== p.id"
+                class="px-2 py-0.5 text-xs rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                :title="t('reset')"
+              >↺</button>
+
               <!-- Test button — disabled when provider not selected -->
               <button
                 @click="runTest(p.id)"
@@ -241,7 +249,7 @@ import { ref } from 'vue'
 import { useSettings } from '../composables/useSettings'
 import { useI18n } from '../composables/useI18n'
 import { testProvider, fetchOllamaModels, AIError } from '../composables/useAI'
-import { getLabel } from '../../shared/types'
+import { getLabel, DEFAULT_SETTINGS } from '../../shared/types'
 import type { AIProvider, SkuotyPlugin } from '../../shared/types'
 
 defineEmits<{ close: [] }>()
@@ -272,6 +280,13 @@ const testState = ref<Record<string, 'idle' | 'testing' | 'ok' | 'error'>>({
 const testMsg = ref<Record<string, string>>({
   gemini: '', ollama: '', openrouter: '', anthropic: '', openai: '',
 })
+
+function resetProvider(provider: AIProvider) {
+  const def = DEFAULT_SETTINGS.providers[provider]
+  settings.value.providers[provider] = { ...def }
+  testState.value[provider] = 'idle'
+  testMsg.value[provider] = ''
+}
 
 async function runTest(provider: AIProvider) {
   testState.value[provider] = 'testing'
