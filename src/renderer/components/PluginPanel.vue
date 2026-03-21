@@ -1,16 +1,16 @@
 <template>
   <!-- Bottom bar: one button per enabled plugin -->
-  <div class="px-3 pb-3 pt-2 border-t border-[#3a3a3a] flex gap-1.5 flex-wrap">
+  <div class="px-3 pb-3 pt-2 border-t border-[var(--border)] flex gap-1.5 flex-wrap">
     <button
       v-for="plugin in enabledPlugins"
       :key="plugin.name"
       @click="openPopup(plugin)"
-      class="px-3 py-1.5 rounded text-xs font-medium bg-[#3d3d3d] text-[#c0c0c0] hover:bg-[#6366f1] hover:text-white transition-colors"
+      class="px-3 py-1.5 rounded text-xs font-medium bg-[var(--bg-element)] text-[var(--text-second)] hover:bg-[#6366f1] hover:text-white transition-colors"
     >
       {{ getLabel(plugin.label, settings.language) }}
     </button>
 
-    <p v-if="!enabledPlugins.length" class="text-xs text-[#4a4a4a] italic self-center">
+    <p v-if="!enabledPlugins.length" class="text-xs text-[var(--text-faint)] italic self-center">
       {{ t('noPlugins') }}
     </p>
   </div>
@@ -23,28 +23,24 @@
         class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
         @click.self="closePopup"
       >
-        <div class="bg-[#2a2a2a] border border-[#4a4a4a] rounded-xl p-5 w-72 shadow-2xl">
+        <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-72 shadow-2xl">
 
           <!-- Header -->
           <div class="flex items-center justify-between mb-4">
-            <span class="text-sm font-semibold text-[#f0f0f0]">
+            <span class="text-sm font-semibold text-[var(--text-primary)]">
               {{ getLabel(activePlugin.label, settings.language) }}
             </span>
-            <button @click="closePopup" class="text-[#6b6b6b] hover:text-[#f0f0f0] transition-colors">✕</button>
+            <button @click="closePopup" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
           </div>
 
           <!-- Options dropdown (only when options is an array) -->
           <div v-if="Array.isArray(activePlugin.options)" class="flex flex-col gap-1 mb-4">
-            <label class="text-xs text-[#7a7a7a]">{{ t('option') }}</label>
+            <label class="text-xs text-[var(--text-muted)]">{{ t('option') }}</label>
             <select
               v-model="selectedOption"
-              class="bg-[#333] border border-[#4a4a4a] rounded-lg px-2.5 py-1.5 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#6366f1]"
+              class="bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[#6366f1]"
             >
-              <option
-                v-for="opt in activePlugin.options"
-                :key="opt.value"
-                :value="opt.value"
-              >
+              <option v-for="opt in activePlugin.options" :key="opt.value" :value="opt.value">
                 {{ getLabel(opt.label, settings.language) }}
               </option>
             </select>
@@ -76,7 +72,7 @@
 import { ref, computed } from 'vue'
 import { useSettings } from '../composables/useSettings'
 import { useI18n } from '../composables/useI18n'
-import { runPlugin } from '../composables/useAI'
+import { runPlugin, AIError } from '../composables/useAI'
 import { getLabel } from '../../shared/types'
 import type { SkuotyPlugin } from '../../shared/types'
 
@@ -92,7 +88,6 @@ const { t } = useI18n()
 
 const enabledPlugins = computed(() => settings.value.plugins.filter((p) => p.enabled))
 
-// context: elaborated output if present, else selection
 const context = computed(() =>
   props.elaboratedText.trim() || props.selectionText.trim()
 )
@@ -104,12 +99,9 @@ const error          = ref('')
 
 function openPopup(plugin: SkuotyPlugin) {
   activePlugin.value = plugin
-  // Resolve initial option
-  if (Array.isArray(plugin.options)) {
-    selectedOption.value = plugin.options[0]?.value ?? ''
-  } else {
-    selectedOption.value = plugin.options
-  }
+  selectedOption.value = Array.isArray(plugin.options)
+    ? plugin.options[0]?.value ?? ''
+    : plugin.options
   error.value = ''
 }
 
@@ -124,16 +116,15 @@ async function run() {
   isRunning.value = true
   error.value = ''
   try {
-    const result = await runPlugin(
-      activePlugin.value,
-      selectedOption.value,
-      context.value,
-      settings.value,
-    )
+    const result = await runPlugin(activePlugin.value, selectedOption.value, context.value, settings.value)
     emit('result', result)
     closePopup()
   } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : 'Unknown error'
+    if (e instanceof AIError) {
+      error.value = t.value(e.code) + (e.message && e.message !== e.code ? ` (${e.message})` : '')
+    } else {
+      error.value = e instanceof Error ? e.message : t.value('errApi')
+    }
   } finally {
     isRunning.value = false
   }

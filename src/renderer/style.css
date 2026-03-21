@@ -14,14 +14,35 @@ html, body, #app {
   font-family: system-ui, -apple-system, sans-serif;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 4px;
+/* ── Theme: Dark (default) ── */
+:root, [data-theme="dark"] {
+  --bg-base:     #2a2a2a;
+  --bg-deep:     #1e1e1e;
+  --bg-element:  #3d3d3d;
+  --bg-hover:    #4a4a4a;
+  --border:      #3a3a3a;
+  --text-primary: #f0f0f0;
+  --text-second:  #a0a0a0;
+  --text-muted:   #6b6b6b;
+  --text-faint:   #4a4a4a;
+  --scrollbar:    #4a4a4a;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+
+/* ── Theme: Light ── */
+[data-theme="light"] {
+  --bg-base:     #f5f5f5;
+  --bg-deep:     #e8e8e8;
+  --bg-element:  #d5d5d5;
+  --bg-hover:    #c5c5c5;
+  --border:      #d0d0d0;
+  --text-primary: #1a1a1a;
+  --text-second:  #555555;
+  --text-muted:   #888888;
+  --text-faint:   #aaaaaa;
+  --scrollbar:    #bbbbbb;
 }
-::-webkit-scrollbar-thumb {
-  background: #4a4a4a;
-  border-radius: 2px;
-}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 2px; }

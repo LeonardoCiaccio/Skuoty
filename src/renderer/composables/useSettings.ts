@@ -14,6 +14,7 @@ function loadFromStorage(): AppSettings {
       ...parsed,
       providers: { ...DEFAULT_SETTINGS.providers, ...(parsed.providers ?? {}) },
       plugins: parsed.plugins ?? [],
+      theme: (parsed.theme === 'light' ? 'light' : 'dark') as 'dark' | 'light',
     }
   } catch {
     return structuredClone(DEFAULT_SETTINGS)

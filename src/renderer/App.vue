@@ -1,13 +1,13 @@
 <template>
-  <div class="flex flex-col h-screen bg-[#2a2a2a] text-[#f0f0f0] select-none overflow-hidden rounded-lg border border-[#4a4a4a]">
+  <div class="flex flex-col h-screen bg-[var(--bg-base)] text-[var(--text-primary)] select-none overflow-hidden rounded-lg border border-[var(--border)]">
 
     <!-- Title bar (draggable) -->
-    <div class="flex items-center justify-between px-3 py-2 bg-[#222] border-b border-[#3a3a3a]" style="-webkit-app-region: drag">
-      <span class="text-xs font-semibold tracking-widest text-[#a0a0a0] uppercase">Skuoty</span>
+    <div class="flex items-center justify-between px-3 py-2 bg-[var(--bg-deep)] border-b border-[var(--border)]" style="-webkit-app-region: drag">
+      <span class="text-xs font-semibold tracking-widest text-[var(--text-muted)] uppercase">Skuoty</span>
       <div class="flex gap-1" style="-webkit-app-region: no-drag">
         <button
           @click="showSettings = !showSettings"
-          class="p-1 rounded hover:bg-[#3d3d3d] text-[#a0a0a0] hover:text-[#f0f0f0] transition-colors"
+          class="p-1 rounded hover:bg-[var(--bg-element)] text-[var(--text-second)] hover:text-[var(--text-primary)] transition-colors"
           title="Settings"
         >
           <Cog6ToothIcon class="w-4 h-4" />
@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { Cog6ToothIcon } from '@heroicons/vue/24/outline'
 import TextPreview    from './components/TextPreview.vue'
 import ElaboratedText from './components/ElaboratedText.vue'
@@ -42,6 +42,11 @@ import SettingsPanel  from './components/SettingsPanel.vue'
 import { useSettings } from './composables/useSettings'
 
 const { settings } = useSettings()
+
+// Apply theme to <html> so CSS variables are available everywhere (incl. teleported modals)
+watch(() => settings.value.theme, (t) => {
+  document.documentElement.dataset.theme = t
+}, { immediate: true })
 
 const selectionText  = ref('')
 const elaboratedText = ref('')

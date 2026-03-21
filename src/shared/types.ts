@@ -62,6 +62,7 @@ export interface AIProviderConfigs {
 // ─── App Settings ──────────────────────────────────────────────────────────────
 export interface AppSettings {
   language:        string
+  theme:           'dark' | 'light'
   aiProvider:      AIProvider
   providers:       AIProviderConfigs
   plugins:         SkuotyPlugin[]
@@ -70,6 +71,7 @@ export interface AppSettings {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   language:   'en',
+  theme:      'dark',
   aiProvider: 'gemini',
   providers: {
     gemini:     { apiKey: '',                        model: 'gemini-2.0-flash' },

@@ -1,11 +1,11 @@
 <template>
   <div class="px-3 py-1 flex-1 flex flex-col min-h-0">
-    <p class="text-xs text-[#6b6b6b] mb-1 uppercase tracking-wider">{{ t('output') }}</p>
+    <p class="text-xs text-[var(--text-muted)] mb-1 uppercase tracking-wider">{{ t('output') }}</p>
     <div class="relative flex-1 min-h-0">
       <textarea
         :value="modelValue"
         @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
-        class="w-full h-full bg-[#222] border border-[#3a3a3a] rounded px-3 py-2 text-sm text-[#f0f0f0] resize-none focus:outline-none focus:border-[#6366f1] transition-colors placeholder-[#4a4a4a]"
+        class="w-full h-full bg-[var(--bg-deep)] border border-[var(--border)] rounded px-3 py-2 text-sm text-[var(--text-primary)] resize-none focus:outline-none focus:border-[#6366f1] transition-colors placeholder-[var(--text-faint)]"
         :placeholder="t('outputPlaceholder')"
         spellcheck="false"
       />
@@ -14,7 +14,7 @@
         <button
           @click="$emit('copy')"
           :disabled="!modelValue"
-          class="p-1.5 rounded bg-[#3d3d3d] hover:bg-[#4a4a4a] disabled:opacity-30 disabled:cursor-not-allowed text-[#a0a0a0] hover:text-[#f0f0f0] transition-colors"
+          class="p-1.5 rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-second)] hover:text-[var(--text-primary)] transition-colors"
           :title="t('copyOutput')"
         >
           <ClipboardDocumentIcon class="w-3.5 h-3.5" />
@@ -22,7 +22,7 @@
         <button
           @click="$emit('paste-back')"
           :disabled="!modelValue"
-          class="p-1.5 rounded bg-[#3d3d3d] hover:bg-[#4a4a4a] disabled:opacity-30 disabled:cursor-not-allowed text-[#a0a0a0] hover:text-[#f0f0f0] transition-colors"
+          class="p-1.5 rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-second)] hover:text-[var(--text-primary)] transition-colors"
           :title="t('pasteBack')"
         >
           <ArrowUturnLeftIcon class="w-3.5 h-3.5" />

@@ -1,12 +1,12 @@
 <template>
   <div class="px-3 pt-2 pb-1">
-    <p class="text-xs text-[#6b6b6b] mb-1 uppercase tracking-wider">{{ t('selection') }}</p>
-    <div class="bg-[#222] border border-[#3a3a3a] rounded px-3 py-2 min-h-[40px]">
-      <p v-if="text" class="text-xs text-[#a0a0a0] leading-relaxed line-clamp-2 break-words">
+    <p class="text-xs text-[var(--text-muted)] mb-1 uppercase tracking-wider">{{ t('selection') }}</p>
+    <div class="bg-[var(--bg-deep)] border border-[var(--border)] rounded px-3 py-2 min-h-[40px]">
+      <p v-if="text" class="text-xs text-[var(--text-second)] leading-relaxed line-clamp-2 break-words">
         {{ preview }}
-        <span v-if="isTruncated" class="text-[#6b6b6b]">…</span>
+        <span v-if="isTruncated" class="text-[var(--text-muted)]">…</span>
       </p>
-      <p v-else class="text-xs text-[#6b6b6b] italic">
+      <p v-else class="text-xs text-[var(--text-muted)] italic">
         {{ t('selectionHint') }}
       </p>
     </div>
