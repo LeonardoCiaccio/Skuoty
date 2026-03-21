@@ -2,8 +2,6 @@ import { ref, watchEffect } from 'vue'
 import { DEFAULT_SETTINGS } from '../../shared/types'
 import type { AppSettings } from '../../shared/types'
 
-const STORAGE_KEY = 'skuoty-settings'
-
 function merge(saved: Partial<AppSettings>): AppSettings {
   return {
     ...DEFAULT_SETTINGS,
@@ -14,46 +12,26 @@ function merge(saved: Partial<AppSettings>): AppSettings {
   }
 }
 
-function fromLocalStorage(): AppSettings {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? merge(JSON.parse(raw) as Partial<AppSettings>) : structuredClone(DEFAULT_SETTINGS)
-  } catch {
-    return structuredClone(DEFAULT_SETTINGS)
-  }
-}
+// Module-level singleton — starts with defaults, populated by init()
+const settings = ref<AppSettings>(structuredClone(DEFAULT_SETTINGS))
+const ready = ref(false)
 
-// Module-level singleton
-const settings = ref<AppSettings>(fromLocalStorage())
-const storeReady = ref(false)
-
-// Save on every change:
-//  - always to localStorage (sync, fast)
-//  - to electron-store via IPC once init() has completed (reliable across restarts)
+// Save to electron-store on every change, but only after init() has loaded
+// the authoritative data (avoids overwriting saved settings with defaults)
 watchEffect(() => {
-  const snapshot = JSON.parse(JSON.stringify(settings.value)) as AppSettings
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))
-  if (storeReady.value) {
-    window.skuoty.setSettings(snapshot)
-  }
+  if (!ready.value) return
+  window.skuoty.setSettings(JSON.parse(JSON.stringify(settings.value)) as AppSettings)
 })
 
 export function useSettings() {
-  /**
-   * Must be called once from App.vue onMounted.
-   * Loads from electron-store (authoritative) only when localStorage is empty —
-   * i.e. first run or after the browser storage was cleared.
-   */
+  /** Call once from App.vue onMounted. Loads settings from electron-store. */
   async function init() {
-    if (storeReady.value) return
+    if (ready.value) return
     try {
-      const hasCache = localStorage.getItem(STORAGE_KEY) !== null
-      if (!hasCache) {
-        const saved = await window.skuoty.getSettings() as Partial<AppSettings> | null
-        if (saved) settings.value = merge(saved)
-      }
-    } catch { /* keep current */ }
-    storeReady.value = true
+      const saved = await window.skuoty.getSettings() as Partial<AppSettings> | null
+      if (saved) settings.value = merge(saved)
+    } catch { /* keep defaults */ }
+    ready.value = true
   }
 
   function exportSettings(): string {
