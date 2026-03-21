@@ -2,13 +2,13 @@
   <div class="flex flex-1 min-h-0">
 
     <!-- ── Sidebar ── -->
-    <nav class="w-24 bg-[var(--bg-deep)] border-r border-[var(--border)] flex flex-col py-2 shrink-0">
+    <nav class="w-28 bg-[var(--bg-deep)] border-r border-[var(--border)] flex flex-col py-3 shrink-0">
       <button
         v-for="s in sections"
         :key="s.id"
         @click="active = s.id"
         :class="[
-          'relative px-4 py-3 text-left text-xs transition-colors',
+          'relative px-5 py-3.5 text-left text-xs transition-colors',
           active === s.id ? 'text-[#6366f1] font-medium' : 'text-[var(--text-muted)] hover:text-[var(--text-second)]',
         ]"
       >
@@ -82,12 +82,12 @@
               <input type="radio" :value="p.id" v-model="settings.aiProvider" class="accent-[#6366f1]" />
               <span class="text-xs font-medium text-[var(--text-primary)] flex-1">{{ p.name }}</span>
 
-              <!-- Test button — text turns green/red, no icons -->
+              <!-- Test button — disabled when provider not selected -->
               <button
                 @click="runTest(p.id)"
-                :disabled="testState[p.id] === 'testing'"
+                :disabled="settings.aiProvider !== p.id || testState[p.id] === 'testing'"
                 :class="[
-                  'px-2 py-0.5 text-xs rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] disabled:opacity-50 transition-colors font-medium',
+                  'px-2 py-0.5 text-xs rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-medium',
                   testState[p.id] === 'ok'    ? 'text-emerald-600' :
                   testState[p.id] === 'error' ? 'text-red-400'     : 'text-[var(--text-second)]',
                 ]"
