@@ -250,7 +250,7 @@ function setupIPC() {
   ipcMain.on(IPC.SETTINGS_SET, (_e, s) => {
     setupStore().set('settings', s)
     const incoming = (s as { hotkeys?: HotkeySettings })?.hotkeys
-    if (incoming && incoming.capture !== lastHotkeys.capture) {
+    if (incoming) {
       applyHotkeys(incoming)
       lastHotkeys = incoming
     }

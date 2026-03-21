@@ -535,6 +535,7 @@ const updateMsg        = ref('')
 
 function factoryReset() {
   settings.value = structuredClone(DEFAULT_SETTINGS)
+  window.skuoty.setSettings(settings.value)
   window.skuoty.setHotkeys(DEFAULT_SETTINGS.hotkeys)
   factoryResetDone.value = true
   setTimeout(() => { factoryResetDone.value = false }, 2000)
