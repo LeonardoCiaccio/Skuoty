@@ -154,7 +154,7 @@ function createTray() {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 640, height: 520, minWidth: 480, minHeight: 400,
+    width: 640, height: 520, minWidth: 480, minHeight: 400, maxWidth: 860, maxHeight: 740,
     frame: false, transparent: false, resizable: true,
     show: false, alwaysOnTop: true, skipTaskbar: true,
     webPreferences: {
@@ -214,6 +214,8 @@ function setupIPC() {
 
   ipcMain.handle(IPC.SETTINGS_GET, () => setupStore().get('settings'))
   ipcMain.on(IPC.SETTINGS_SET, (_e, s) => setupStore().set('settings', s))
+
+  ipcMain.on(IPC.WINDOW_HIDE, () => { mainWindow?.hide() })
 
   ipcMain.on(IPC.LANGUAGE_CHANGED, (_e, lang: string) => {
     currentLang = lang

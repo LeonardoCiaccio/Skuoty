@@ -14,12 +14,10 @@
         <button
           @click="copy"
           :disabled="!modelValue"
-          class="p-1.5 rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          :class="copied ? 'text-emerald-500' : 'text-[var(--text-second)] hover:text-[var(--text-primary)]'"
+          class="p-1.5 rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-[var(--text-second)] hover:text-[var(--text-primary)]"
           :title="t('copyOutput')"
         >
-          <ClipboardDocumentCheckIcon v-if="copied" class="w-3.5 h-3.5" />
-          <ClipboardDocumentIcon v-else class="w-3.5 h-3.5" />
+          <ClipboardDocumentIcon class="w-3.5 h-3.5" />
         </button>
         <button
           v-if="hasTarget"
@@ -44,25 +42,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { ClipboardDocumentIcon, ClipboardDocumentCheckIcon, ArrowUturnLeftIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+
+import { ClipboardDocumentIcon, ArrowUturnLeftIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { useI18n } from '../composables/useI18n'
 
 const props = defineProps<{ modelValue: string; hasTarget: boolean }>()
-defineEmits<{
+const emit = defineEmits<{
   'update:modelValue': [value: string]
   'paste-back': []
+  'copy-done': []
   'reset': []
 }>()
 
 const { t } = useI18n()
 
-const copied = ref(false)
 
 function copy() {
   navigator.clipboard.writeText(props.modelValue).then(() => {
-    copied.value = true
-    setTimeout(() => { copied.value = false }, 1500)
+    emit('copy-done')
   })
 }
 </script>

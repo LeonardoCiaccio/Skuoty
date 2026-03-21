@@ -4,11 +4,15 @@
     <button
       v-for="plugin in enabledPlugins"
       :key="plugin.name"
-      @click="openPopup(plugin)"
-      :disabled="!context"
+      @click="Array.isArray(plugin.options) ? openPopup(plugin) : runDirect(plugin)"
+      :disabled="!context || runningDirect === plugin.name"
       :title="!context ? t('noContextHint') : undefined"
-      class="px-3 py-1.5 rounded text-xs font-medium bg-[var(--bg-element)] text-[var(--text-second)] hover:bg-[#6366f1] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--bg-element)] disabled:hover:text-[var(--text-second)]"
+      class="px-3 py-1.5 rounded text-xs font-medium bg-[var(--bg-element)] text-[var(--text-second)] hover:bg-[#6366f1] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[var(--bg-element)] disabled:hover:text-[var(--text-second)] flex items-center gap-1"
     >
+      <svg v-if="runningDirect === plugin.name" class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+      </svg>
       {{ getLabel(plugin.label, settings.language) }}
     </button>
 
@@ -97,6 +101,7 @@ const context = computed(() =>
 const activePlugin   = ref<SkuotyPlugin | null>(null)
 const selectedOption = ref('')
 const isRunning      = ref(false)
+const runningDirect  = ref('')   // name of the direct-run plugin currently running
 const error          = ref('')
 
 function openPopup(plugin: SkuotyPlugin) {
@@ -111,6 +116,19 @@ function closePopup() {
   if (isRunning.value) return
   activePlugin.value = null
   error.value = ''
+}
+
+async function runDirect(plugin: SkuotyPlugin) {
+  if (!context.value || runningDirect.value) return
+  runningDirect.value = plugin.name
+  try {
+    const result = await runPlugin(plugin, plugin.options as string, context.value, settings.value)
+    emit('result', result)
+  } catch (e: unknown) {
+    // errors on direct-run are silently ignored for now (no popup to show them)
+  } finally {
+    runningDirect.value = ''
+  }
 }
 
 async function run() {

@@ -22,7 +22,7 @@
     <!-- Main content -->
     <template v-else>
       <TextPreview :text="selectionText" :max-chars="settings.previewMaxChars" />
-      <ElaboratedText v-model="elaboratedText" :has-target="hasTarget" @paste-back="pasteBack" @reset="resetSession" />
+      <ElaboratedText v-model="elaboratedText" :has-target="hasTarget" @paste-back="pasteBack" @copy-done="copyDone" @reset="resetSession" />
       <PluginPanel
         :selection-text="selectionText"
         :elaborated-text="elaboratedText"
@@ -70,6 +70,11 @@ onMounted(() => {
   window.skuoty.signalReady()
   window.skuoty.setLanguage(settings.value.language)
 })
+
+function copyDone() {
+  resetSession()
+  window.skuoty.hide()
+}
 
 function resetSession() {
   selectionText.value  = ''
