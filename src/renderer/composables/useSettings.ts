@@ -7,8 +7,9 @@ function merge(saved: Partial<AppSettings>): AppSettings {
     ...DEFAULT_SETTINGS,
     ...saved,
     providers: { ...DEFAULT_SETTINGS.providers, ...(saved.providers ?? {}) },
-    plugins: saved.plugins ?? [],
-    theme: saved.theme === 'light' ? 'light' : 'dark',
+    plugins:   saved.plugins ?? [],
+    theme:     saved.theme === 'light' ? 'light' : 'dark',
+    hotkeys:   { ...DEFAULT_SETTINGS.hotkeys, ...(saved.hotkeys ?? {}) },
   }
 }
 

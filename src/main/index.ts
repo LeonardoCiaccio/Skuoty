@@ -1,12 +1,14 @@
-import { app, BrowserWindow, ipcMain, clipboard, screen, Tray, Menu, nativeImage, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, clipboard, screen, Tray, Menu, nativeImage, dialog, globalShortcut } from 'electron'
 import { spawn, spawnSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import path from 'path'
 import { setupStore } from './store'
-import { IPC } from '../shared/types'
+import { IPC, DEFAULT_SETTINGS } from '../shared/types'
+import type { HotkeySettings } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
+let updateCaptureKey: ((accelerator: string) => void) | null = null
 let tray: Tray | null = null
 let rendererReady = false
 let isQuitting = false
@@ -150,6 +152,29 @@ function createTray() {
   })
 }
 
+// ─── Global shortcut: show/hide window ────────────────────────────────────────
+
+let showWindowAccelerator = ''
+
+function registerShowWindow(accelerator: string) {
+  if (showWindowAccelerator) {
+    try { globalShortcut.unregister(showWindowAccelerator) } catch { /* ignore */ }
+  }
+  showWindowAccelerator = ''
+  if (!accelerator) return
+  try {
+    const ok = globalShortcut.register(accelerator, () => {
+      if (!mainWindow) return
+      if (mainWindow.isVisible()) mainWindow.hide()
+      else { mainWindow.show(); mainWindow.focus() }
+    })
+    if (ok) showWindowAccelerator = accelerator
+    else console.warn('[hotkey] globalShortcut already registered or invalid:', accelerator)
+  } catch (e) {
+    console.warn('[hotkey] globalShortcut error:', e)
+  }
+}
+
 // ─── Window ───────────────────────────────────────────────────────────────────
 
 function createWindow() {
@@ -217,6 +242,11 @@ function setupIPC() {
 
   ipcMain.on(IPC.WINDOW_HIDE, () => { mainWindow?.hide() })
 
+  ipcMain.on(IPC.HOTKEYS_CHANGED, (_e, hotkeys: HotkeySettings) => {
+    updateCaptureKey?.(hotkeys.capture)
+    registerShowWindow(hotkeys.showWindow)
+  })
+
   ipcMain.on(IPC.LANGUAGE_CHANGED, (_e, lang: string) => {
     currentLang = lang
     if (tray) tray.setContextMenu(buildTrayMenu())
@@ -249,6 +279,9 @@ app.whenReady().then(() => {
   app.on('window-all-closed', () => { /* stay in tray */ })
   app.on('before-quit', () => { isQuitting = true })
 
+  const savedSettings = setupStore().get('settings') as { hotkeys?: HotkeySettings } | null
+  const hotkeys: HotkeySettings = { ...DEFAULT_SETTINGS.hotkeys, ...(savedSettings?.hotkeys ?? {}) }
+
   if (process.platform === 'win32') {
     writePasteScripts()
     startDaemon()   // compiles Win32 type once (~300 ms), then stays ready
@@ -258,10 +291,13 @@ app.whenReady().then(() => {
   createTray()
   setupIPC()
 
+  registerShowWindow(hotkeys.showWindow)
+
   try {
-    const { setupHotkey } = require('./hotkey') as typeof import('./hotkey')
-    setupHotkey((text) => showWindow(text))
-    console.log('[skuoty] ready — double Ctrl+C to activate')
+    const hotkeyModule = require('./hotkey') as typeof import('./hotkey')
+    updateCaptureKey = hotkeyModule.updateCaptureKey
+    hotkeyModule.setupHotkey((text) => showWindow(text), hotkeys.capture)
+    console.log(`[skuoty] ready — double ${hotkeys.capture} to activate`)
   } catch (err) {
     console.error('[skuoty] keyboard hook failed:', err)
   }

@@ -197,6 +197,37 @@
         </div>
       </template>
 
+      <!-- ══ SHORTCUTS ══ -->
+      <template v-if="active === 'shortcuts'">
+        <h2 class="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">{{ t('shortcuts') }}</h2>
+
+        <div class="flex flex-col gap-4">
+          <!-- Capture key -->
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-[var(--text-muted)]">{{ t('captureKey') }}</label>
+            <p class="text-xs text-[var(--text-faint)] mb-1">Double press: {{ settings.hotkeys.capture }}</p>
+            <button
+              @click="startRecording('capture')"
+              :class="['field text-left w-full', recording === 'capture' ? 'border-[#6366f1] text-[var(--text-muted)] animate-pulse' : '']"
+            >
+              {{ recording === 'capture' ? t('pressKeys') : settings.hotkeys.capture }}
+            </button>
+          </div>
+
+          <!-- Show window key -->
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-[var(--text-muted)]">{{ t('showWindowKey') }}</label>
+            <button
+              @click="startRecording('showWindow')"
+              :class="['field text-left w-full', recording === 'showWindow' ? 'border-[#6366f1] text-[var(--text-muted)] animate-pulse' : '']"
+            >
+              {{ recording === 'showWindow' ? t('pressKeys') : (settings.hotkeys.showWindow || '—') }}
+            </button>
+            <p class="text-xs text-[var(--text-faint)]">Esc to clear</p>
+          </div>
+        </div>
+      </template>
+
       <!-- ══ BACKUP ══ -->
       <template v-if="active === 'backup'">
         <h2 class="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Backup</h2>
@@ -245,7 +276,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { useSettings } from '../composables/useSettings'
 import { useI18n } from '../composables/useI18n'
 import { testProvider, fetchOllamaModels, AIError } from '../composables/useAI'
@@ -258,10 +289,11 @@ const { settings, exportSettings, importSettings } = useSettings()
 const { t } = useI18n()
 
 const sections = [
-  { id: 'general', label: { en: 'General',  it: 'Generale', es: 'General',  fr: 'Général',  de: 'Allgemein' } },
-  { id: 'ai',      label: { en: 'AI',       it: 'AI',       es: 'IA',       fr: 'IA',       de: 'KI'        } },
-  { id: 'plugins', label: { en: 'Plugins',  it: 'Plugin',   es: 'Plugins',  fr: 'Plugins',  de: 'Plugins'   } },
-  { id: 'backup',  label: { en: 'Backup',   it: 'Backup',   es: 'Copia',    fr: 'Sauvegarde', de: 'Sicherung' } },
+  { id: 'general',   label: { en: 'General',   it: 'Generale',   es: 'General',   fr: 'Général',    de: 'Allgemein'  } },
+  { id: 'ai',        label: { en: 'AI',         it: 'AI',         es: 'IA',         fr: 'IA',         de: 'KI'         } },
+  { id: 'plugins',   label: { en: 'Plugins',    it: 'Plugin',     es: 'Plugins',    fr: 'Plugins',    de: 'Plugins'    } },
+  { id: 'shortcuts', label: { en: 'Shortcuts',  it: 'Scorciatoie', es: 'Atajos',   fr: 'Raccourcis',  de: 'Tastenkürzel' } },
+  { id: 'backup',    label: { en: 'Backup',     it: 'Backup',     es: 'Copia',      fr: 'Sauvegarde', de: 'Sicherung'  } },
 ]
 const active = ref('general')
 
@@ -390,6 +422,50 @@ async function doImport() {
   const err = importSettings(json)
   if (err) importError.value = err
 }
+
+// ── Hotkey recorder ───────────────────────────────────────────────────────────
+const recording = ref<'capture' | 'showWindow' | null>(null)
+
+function startRecording(field: 'capture' | 'showWindow') {
+  recording.value = field
+  window.addEventListener('keydown', onKeyDown, { capture: true })
+}
+
+function onKeyDown(e: KeyboardEvent) {
+  e.preventDefault()
+  e.stopPropagation()
+
+  // Escape = cancel (for showWindow) or cancel
+  if (e.key === 'Escape') {
+    if (recording.value === 'showWindow') settings.value.hotkeys.showWindow = ''
+    stopRecording()
+    return
+  }
+
+  // Ignore bare modifiers
+  if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return
+
+  const parts: string[] = []
+  if (e.ctrlKey)  parts.push('Ctrl')
+  if (e.altKey)   parts.push('Alt')
+  if (e.shiftKey) parts.push('Shift')
+
+  const key = e.key.length === 1 ? e.key.toUpperCase() : e.key
+  parts.push(key)
+
+  const accelerator = parts.join('+')
+  if (recording.value) settings.value.hotkeys[recording.value] = accelerator
+
+  stopRecording()
+  window.skuoty.setHotkeys(settings.value.hotkeys)
+}
+
+function stopRecording() {
+  recording.value = null
+  window.removeEventListener('keydown', onKeyDown, { capture: true })
+}
+
+onUnmounted(() => stopRecording())
 
 // ── Plugin validation ─────────────────────────────────────────────────────────
 function validatePlugin(raw: string): SkuotyPlugin | null {

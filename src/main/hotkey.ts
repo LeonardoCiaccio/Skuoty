@@ -3,45 +3,57 @@ import { uIOhook, UiohookKey } from 'uiohook-napi'
 
 const DOUBLE_PRESS_WINDOW_MS = 600
 
-let lastCtrlCTime = 0
-let ctrlDown = false
+let lastPressTime = 0
+let modifierDown  = false
+let captureModifier: 'Ctrl' | 'Alt' = 'Ctrl'
+let captureKeyCode = UiohookKey.C
 
-export function setupHotkey(onCapture: (text: string) => void) {
+function parseAccelerator(accelerator: string) {
+  const parts = accelerator.split('+')
+  const keyName = parts[parts.length - 1].toUpperCase()
+  captureModifier = parts.includes('Alt') ? 'Alt' : 'Ctrl'
+  captureKeyCode  = (UiohookKey as Record<string, number>)[keyName] ?? UiohookKey.C
+}
+
+function isModifierKey(keycode: number): boolean {
+  return captureModifier === 'Alt'
+    ? keycode === UiohookKey.Alt || keycode === UiohookKey.AltRight
+    : keycode === UiohookKey.Ctrl || keycode === UiohookKey.CtrlRight
+}
+
+export function setupHotkey(onCapture: (text: string) => void, accelerator = 'Ctrl+C') {
+  parseAccelerator(accelerator)
+
   uIOhook.on('keydown', (e) => {
-    // Track both left and right Ctrl
-    if (e.keycode === UiohookKey.Ctrl || e.keycode === UiohookKey.CtrlRight) {
-      ctrlDown = true
-      return
-    }
+    if (isModifierKey(e.keycode)) { modifierDown = true; return }
 
-    if (ctrlDown && e.keycode === UiohookKey.C) {
-      const now = Date.now()
-      const delta = now - lastCtrlCTime
-      lastCtrlCTime = now
-      console.log(`[hotkey] Ctrl+C detected, delta=${delta}ms`)
+    if (modifierDown && e.keycode === captureKeyCode) {
+      const now   = Date.now()
+      const delta = now - lastPressTime
+      lastPressTime = now
 
       if (delta < DOUBLE_PRESS_WINDOW_MS && delta > 0) {
-        console.log('[hotkey] Double Ctrl+C! Reading clipboard...')
         setTimeout(() => {
           const text = clipboard.readText().trim()
-          console.log(`[hotkey] clipboard text length: ${text.length}`)
-          if (text.length > 0) {
-            onCapture(text)
-          }
+          if (text.length > 0) onCapture(text)
         }, 80)
       }
     }
   })
 
   uIOhook.on('keyup', (e) => {
-    if (e.keycode === UiohookKey.Ctrl || e.keycode === UiohookKey.CtrlRight) {
-      ctrlDown = false
-    }
+    if (isModifierKey(e.keycode)) modifierDown = false
   })
 
   console.log('[hotkey] uiohook starting...')
   uIOhook.start()
   console.log('[hotkey] uiohook started')
+}
+
+export function updateCaptureKey(accelerator: string) {
+  parseAccelerator(accelerator)
+  lastPressTime = 0
+  modifierDown  = false
 }
 
 export function stopHotkey() {
