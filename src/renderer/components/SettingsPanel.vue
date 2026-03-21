@@ -88,7 +88,7 @@
                 :disabled="testState[p.id] === 'testing'"
                 :class="[
                   'px-2 py-0.5 text-xs rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] disabled:opacity-50 transition-colors font-medium',
-                  testState[p.id] === 'ok'    ? 'text-emerald-400' :
+                  testState[p.id] === 'ok'    ? 'text-emerald-600' :
                   testState[p.id] === 'error' ? 'text-red-400'     : 'text-[var(--text-second)]',
                 ]"
               >
