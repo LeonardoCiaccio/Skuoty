@@ -183,7 +183,7 @@
           </div>
 
           <p v-if="!settings.plugins.length" class="text-xs text-[#5a5a5a] italic">
-            {{ t('noPlugins') }}
+            {{ t('noPluginsList') }}
           </p>
         </div>
 
@@ -221,7 +221,7 @@
             <textarea
               v-model="importJson"
               rows="6"
-              :placeholder="t('pastJson')"
+              :placeholder="t('pasteJson')"
               class="field w-full resize-none font-mono text-xs"
             />
             <p v-if="importError" class="text-xs text-red-400 mt-1">{{ importError }}</p>
@@ -263,8 +263,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useSettings } from '../composables/useSettings'
+import { useI18n } from '../composables/useI18n'
 import { testProvider, fetchOllamaModels } from '../composables/useAI'
 import { getLabel } from '../../shared/types'
 import type { AIProvider, SkuotyPlugin } from '../../shared/types'
@@ -272,41 +273,7 @@ import type { AIProvider, SkuotyPlugin } from '../../shared/types'
 defineEmits<{ close: [] }>()
 
 const { settings, exportSettings, importSettings } = useSettings()
-
-// ── i18n strings ──────────────────────────────────────────────────────────────
-const STRINGS: Record<string, Record<string, string>> = {
-  en: {
-    general: 'General', ai: 'AI', plugins: 'Plugins', backup: 'Backup',
-    language: 'Interface language', previewMaxChars: 'Preview max chars',
-    aiProvider: 'AI Provider', apiKey: 'API Key', model: 'Model', baseUrl: 'Base URL',
-    test: 'Test', refreshModels: 'Refresh models',
-    edit: 'Edit', delete: 'Delete', editPlugin: 'Edit plugin (JSON)',
-    noPlugins: 'No plugins installed.', loadPlugin: 'Load a new plugin (paste JSON)',
-    load: 'Load', save: 'Save', cancel: 'Cancel',
-    exportDesc: 'Copy all settings and plugins to clipboard.',
-    export: 'Export to clipboard', copiedToClipboard: 'Copied to clipboard!',
-    importDesc: 'Paste previously exported settings to restore.',
-    import: 'Import', pastJson: 'Paste JSON here…',
-  },
-  it: {
-    general: 'Generale', ai: 'AI', plugins: 'Plugin', backup: 'Backup',
-    language: 'Lingua interfaccia', previewMaxChars: 'Anteprima max caratteri',
-    aiProvider: 'Provider AI', apiKey: 'Chiave API', model: 'Modello', baseUrl: 'URL base',
-    test: 'Test', refreshModels: 'Aggiorna modelli',
-    edit: 'Modifica', delete: 'Elimina', editPlugin: 'Modifica plugin (JSON)',
-    noPlugins: 'Nessun plugin installato.', loadPlugin: 'Carica un nuovo plugin (incolla JSON)',
-    load: 'Carica', save: 'Salva', cancel: 'Annulla',
-    exportDesc: 'Copia impostazioni e plugin negli appunti.',
-    export: 'Esporta negli appunti', copiedToClipboard: 'Copiato negli appunti!',
-    importDesc: 'Incolla impostazioni esportate in precedenza.',
-    import: 'Importa', pastJson: 'Incolla il JSON qui…',
-  },
-}
-
-function t(key: string): string {
-  const lang = settings.value.language
-  return STRINGS[lang]?.[key] ?? STRINGS['en'][key] ?? key
-}
+const { t } = useI18n()
 
 // ── Sidebar sections ───────────────────────────────────────────────────────────
 const sections = [

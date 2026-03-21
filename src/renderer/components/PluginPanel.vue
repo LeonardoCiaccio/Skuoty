@@ -11,7 +11,7 @@
     </button>
 
     <p v-if="!enabledPlugins.length" class="text-xs text-[#4a4a4a] italic self-center">
-      No plugins — add one in Settings.
+      {{ t('noPlugins') }}
     </p>
   </div>
 
@@ -35,7 +35,7 @@
 
           <!-- Options dropdown (only when options is an array) -->
           <div v-if="Array.isArray(activePlugin.options)" class="flex flex-col gap-1 mb-4">
-            <label class="text-xs text-[#7a7a7a]">Option</label>
+            <label class="text-xs text-[#7a7a7a]">{{ t('option') }}</label>
             <select
               v-model="selectedOption"
               class="bg-[#333] border border-[#4a4a4a] rounded-lg px-2.5 py-1.5 text-xs text-[#f0f0f0] focus:outline-none focus:border-[#6366f1]"
@@ -63,7 +63,7 @@
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
             </svg>
-            {{ isRunning ? 'Running…' : 'Run' }}
+            {{ isRunning ? t('running') : t('run') }}
           </button>
 
         </div>
@@ -75,6 +75,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useSettings } from '../composables/useSettings'
+import { useI18n } from '../composables/useI18n'
 import { runPlugin } from '../composables/useAI'
 import { getLabel } from '../../shared/types'
 import type { SkuotyPlugin } from '../../shared/types'
@@ -87,6 +88,7 @@ const props = defineProps<{
 const emit = defineEmits<{ result: [text: string] }>()
 
 const { settings } = useSettings()
+const { t } = useI18n()
 
 const enabledPlugins = computed(() => settings.value.plugins.filter((p) => p.enabled))
 
