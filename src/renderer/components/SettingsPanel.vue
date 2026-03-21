@@ -103,22 +103,22 @@
 
             <!-- Ollama fields -->
             <template v-if="p.id === 'ollama'">
-              <div class="flex flex-col gap-2">
+              <div class="flex flex-col gap-2" :class="settings.aiProvider !== p.id ? 'opacity-40 pointer-events-none' : ''">
                 <div class="flex flex-col gap-0.5">
                   <label class="text-xs text-[var(--text-muted)]">{{ t('baseUrl') }}</label>
-                  <input v-model="settings.providers.ollama.baseUrl" type="text" class="field" />
+                  <input v-model="settings.providers.ollama.baseUrl" type="text" class="field" :disabled="settings.aiProvider !== p.id" />
                 </div>
                 <div class="flex flex-col gap-0.5">
                   <label class="text-xs text-[var(--text-muted)]">{{ t('model') }}</label>
                   <div class="flex gap-1.5">
-                    <select v-if="ollamaModels.length" v-model="settings.providers.ollama.model" class="field flex-1">
+                    <select v-if="ollamaModels.length" v-model="settings.providers.ollama.model" class="field flex-1" :disabled="settings.aiProvider !== p.id">
                       <option v-for="m in ollamaModels" :key="m" :value="m">{{ m }}</option>
                     </select>
-                    <input v-else v-model="settings.providers.ollama.model" type="text" class="field flex-1" />
+                    <input v-else v-model="settings.providers.ollama.model" type="text" class="field flex-1" :disabled="settings.aiProvider !== p.id" />
                     <button
                       @click="refreshOllamaModels"
-                      :disabled="ollamaFetching"
-                      class="px-2 py-0.5 text-xs rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] text-[var(--text-second)] disabled:opacity-50 transition-colors shrink-0"
+                      :disabled="settings.aiProvider !== p.id || ollamaFetching"
+                      class="px-2 py-0.5 text-xs rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] text-[var(--text-second)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
                       :title="t('refreshModels')"
                     >{{ ollamaFetching ? '…' : '↺' }}</button>
                   </div>
@@ -129,14 +129,14 @@
 
             <!-- Other providers -->
             <template v-else>
-              <div class="flex flex-col gap-2">
+              <div class="flex flex-col gap-2" :class="settings.aiProvider !== p.id ? 'opacity-40 pointer-events-none' : ''">
                 <div class="flex flex-col gap-0.5">
                   <label class="text-xs text-[var(--text-muted)]">{{ t('apiKey') }}</label>
-                  <input v-model="settings.providers[p.id].apiKey" type="password" class="field" />
+                  <input v-model="settings.providers[p.id].apiKey" type="password" class="field" :disabled="settings.aiProvider !== p.id" />
                 </div>
                 <div class="flex flex-col gap-0.5">
                   <label class="text-xs text-[var(--text-muted)]">{{ t('model') }}</label>
-                  <input v-model="settings.providers[p.id].model" type="text" class="field" />
+                  <input v-model="settings.providers[p.id].model" type="text" class="field" :disabled="settings.aiProvider !== p.id" />
                 </div>
               </div>
             </template>
