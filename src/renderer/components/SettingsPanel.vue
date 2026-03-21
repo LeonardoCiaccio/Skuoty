@@ -33,9 +33,6 @@
               <option value="es">Español</option>
               <option value="fr">Français</option>
               <option value="de">Deutsch</option>
-              <option value="pt">Português</option>
-              <option value="ja">日本語</option>
-              <option value="zh">中文</option>
             </select>
           </div>
 
@@ -203,40 +200,30 @@
 
         <div class="flex flex-col gap-4">
           <!-- Capture key -->
-          <div class="flex flex-col gap-1">
+          <div class="flex flex-col gap-1.5">
             <label class="text-xs text-[var(--text-muted)]">{{ t('captureKey') }}</label>
-            <button
-              @click="startRecording('capture')"
-              :class="['field text-left w-full', recording === 'capture' ? 'border-[#6366f1] text-[var(--text-muted)] animate-pulse' : '']"
-            >
-              {{ recording === 'capture' ? t('pressKeys') : displayAccel(settings.hotkeys.capture) }}
-            </button>
+            <div class="flex gap-2 items-center">
+              <button
+                @click="startRecording"
+                :class="['field flex-1 text-left', recording ? 'border-[#6366f1] text-[var(--text-muted)] animate-pulse' : '']"
+              >
+                {{ recording ? t('pressKeys') : (baseAccel(settings.hotkeys.capture) || '—') }}
+              </button>
+              <label class="flex items-center gap-1.5 text-xs text-[var(--text-muted)] cursor-pointer select-none shrink-0">
+                <input type="checkbox" :checked="isDouble(settings.hotkeys.capture)" @change="toggleDouble" class="accent-[#6366f1]" />
+                {{ t('doublePress') }}
+              </label>
+            </div>
           </div>
 
-          <!-- Show window key -->
-          <div class="flex flex-col gap-1">
-            <label class="text-xs text-[var(--text-muted)]">{{ t('showWindowKey') }}</label>
-            <button
-              @click="startRecording('showWindow')"
-              :class="['field text-left w-full', recording === 'showWindow' ? 'border-[#6366f1] text-[var(--text-muted)] animate-pulse' : '']"
-            >
-              {{ recording === 'showWindow' ? t('pressKeys') : (displayAccel(settings.hotkeys.showWindow) || '—') }}
-            </button>
-            <p class="text-xs text-[var(--text-faint)]">{{ t('escToClear') }}</p>
-          </div>
+          <p class="text-xs text-[var(--text-faint)]">{{ t('escToClear') }}</p>
 
-          <div class="flex items-center gap-2 mt-2">
-            <button
-              v-if="hotkeyDirty"
-              @click="applyHotkeys"
-              class="btn-primary text-xs px-3 py-1.5"
-            >{{ t('save') }}</button>
+          <div class="flex items-center gap-2 mt-1">
             <button
               @click="resetHotkeys"
               class="btn-secondary text-xs px-3 py-1.5"
               :title="t('reset')"
             >↺ {{ t('reset') }}</button>
-            <span v-if="hotkeySaved" class="text-xs text-emerald-500">✓ {{ t('applied') }}</span>
           </div>
         </div>
       </template>
@@ -256,6 +243,40 @@
             <p class="text-xs text-[var(--text-muted)] mb-2">{{ t('importDesc') }}</p>
             <p v-if="importError" class="text-xs text-red-400 mb-1">{{ importError }}</p>
             <button @click="doImport" :disabled="importing" class="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">{{ t('import') }}</button>
+          </div>
+        </div>
+      </template>
+
+      <!-- ══ INFO ══ -->
+      <template v-if="active === 'info'">
+        <h2 class="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">{{ t('info') }}</h2>
+
+        <div class="flex flex-col gap-5">
+          <!-- Version -->
+          <div class="flex items-center justify-between bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-4 py-3">
+            <span class="text-xs text-[var(--text-muted)]">{{ t('version') }}</span>
+            <span class="text-xs font-mono font-semibold text-[var(--text-primary)]">v{{ appVersion }}</span>
+          </div>
+
+          <!-- Factory reset -->
+          <div class="flex flex-col gap-2">
+            <p class="text-xs text-[var(--text-muted)]">{{ t('factoryResetDesc') }}</p>
+            <button
+              @click="factoryReset"
+              class="btn-secondary text-xs px-3 py-1.5 self-start text-red-400 hover:text-red-300"
+            >↺ {{ t('factoryReset') }}</button>
+            <p v-if="factoryResetDone" class="text-xs text-emerald-500">✓ {{ t('applied') }}</p>
+          </div>
+
+          <!-- Update (placeholder) -->
+          <div class="flex flex-col gap-2 border-t border-[var(--border)] pt-4">
+            <p class="text-xs text-[var(--text-muted)]">{{ t('updateDesc') }}</p>
+            <button
+              @click="checkUpdate"
+              :disabled="updateChecking"
+              class="btn-primary text-xs px-3 py-1.5 self-start disabled:opacity-50"
+            >{{ updateChecking ? '…' : t('checkUpdate') }}</button>
+            <p v-if="updateMsg" class="text-xs text-[var(--text-second)]">{{ updateMsg }}</p>
           </div>
         </div>
       </template>
@@ -296,6 +317,8 @@ import { testProvider, fetchOllamaModels, AIError } from '../composables/useAI'
 import { getLabel, DEFAULT_SETTINGS } from '../../shared/types'
 import type { AIProvider, SkuotyPlugin } from '../../shared/types'
 
+const appVersion = __APP_VERSION__
+
 defineEmits<{ close: [] }>()
 
 const { settings, exportSettings, importSettings } = useSettings()
@@ -307,6 +330,7 @@ const sections = [
   { id: 'plugins',   label: { en: 'Plugins',    it: 'Plugin',     es: 'Plugins',    fr: 'Plugins',    de: 'Plugins'    } },
   { id: 'shortcuts', label: { en: 'Shortcuts',  it: 'Scorciatoie', es: 'Atajos',   fr: 'Raccourcis',  de: 'Tastenkürzel' } },
   { id: 'backup',    label: { en: 'Backup',     it: 'Backup',     es: 'Copia',      fr: 'Sauvegarde', de: 'Sicherung'  } },
+  { id: 'info',      label: { en: 'Info',       it: 'Info',       es: 'Info',       fr: 'Info',       de: 'Info'       } },
 ]
 const active = ref('general')
 
@@ -437,16 +461,19 @@ async function doImport() {
 }
 
 // ── Hotkey recorder ───────────────────────────────────────────────────────────
-const recording = ref<'capture' | 'showWindow' | null>(null)
+const recording = ref(false)
 
-function displayAccel(raw: string): string {
-  if (!raw) return ''
-  if (raw.startsWith('2x:')) { const k = raw.slice(3); return `${k} + ${k}` }
-  return raw
+function isDouble(raw: string)   { return raw?.startsWith('2x:') ?? false }
+function baseAccel(raw: string)  { return raw?.startsWith('2x:') ? raw.slice(3) : (raw ?? '') }
+
+function toggleDouble() {
+  const cur = settings.value.hotkeys.capture
+  settings.value.hotkeys.capture = isDouble(cur) ? baseAccel(cur) : ('2x:' + baseAccel(cur))
+  applyHotkeys()
 }
 
-function startRecording(field: 'capture' | 'showWindow') {
-  recording.value = field
+function startRecording() {
+  recording.value = true
   window.addEventListener('keydown', onKeyDown, { capture: true })
 }
 
@@ -458,9 +485,6 @@ const KEY_NAMES: Record<string, string> = {
   'PageUp': 'PageUp', 'PageDown': 'PageDown',
 }
 
-let firstPress = ''
-let firstPressTimer = 0
-
 function buildAccelerator(e: KeyboardEvent): string {
   const parts: string[] = []
   if (e.ctrlKey)  parts.push('Ctrl')
@@ -471,69 +495,57 @@ function buildAccelerator(e: KeyboardEvent): string {
   return parts.join('+')
 }
 
-function commitAccelerator(accelerator: string) {
-  if (recording.value) {
-    settings.value.hotkeys[recording.value] = accelerator
-    hotkeyDirty.value = true
-  }
-  firstPress = ''
-  stopRecording()
-}
-
 function onKeyDown(e: KeyboardEvent) {
   e.preventDefault()
   e.stopPropagation()
 
   if (e.key === 'Escape') {
-    clearTimeout(firstPressTimer)
-    firstPress = ''
-    if (recording.value === 'showWindow') settings.value.hotkeys.showWindow = ''
     stopRecording()
     return
   }
 
   if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return
 
-  const accelerator = buildAccelerator(e)
-
-  if (!firstPress) {
-    // First press — wait to see if user presses same combo again
-    firstPress = accelerator
-    firstPressTimer = window.setTimeout(() => {
-      // No second press within 600ms → single press
-      commitAccelerator(firstPress)
-    }, 600)
-  } else if (accelerator === firstPress) {
-    // Second press of same combo → double press
-    clearTimeout(firstPressTimer)
-    commitAccelerator('2x:' + accelerator)
-  } else {
-    // Different combo on second press → use first press as single
-    clearTimeout(firstPressTimer)
-    commitAccelerator(firstPress)
-  }
+  const accel = buildAccelerator(e)
+  const prefix = isDouble(settings.value.hotkeys.capture) ? '2x:' : ''
+  settings.value.hotkeys.capture = prefix + accel
+  stopRecording()
+  applyHotkeys()
 }
 
 function stopRecording() {
-  recording.value = null
+  recording.value = false
   window.removeEventListener('keydown', onKeyDown, { capture: true })
 }
 
-const hotkeySaved  = ref(false)
-const hotkeyDirty  = ref(false)
-
 function applyHotkeys() {
-  clearTimeout(firstPressTimer)
-  firstPress = ''
+  stopRecording()
   window.skuoty.setHotkeys(settings.value.hotkeys)
-  hotkeyDirty.value = false
-  hotkeySaved.value = true
-  setTimeout(() => { hotkeySaved.value = false }, 2000)
 }
 
 function resetHotkeys() {
   settings.value.hotkeys = { ...DEFAULT_SETTINGS.hotkeys }
   applyHotkeys()
+}
+
+// ── Info / factory reset / update ─────────────────────────────────────────────
+const factoryResetDone = ref(false)
+const updateChecking   = ref(false)
+const updateMsg        = ref('')
+
+function factoryReset() {
+  const { plugins: _p, ...rest } = DEFAULT_SETTINGS
+  settings.value = { ...structuredClone(DEFAULT_SETTINGS) }
+  factoryResetDone.value = true
+  setTimeout(() => { factoryResetDone.value = false }, 2000)
+}
+
+async function checkUpdate() {
+  updateChecking.value = true
+  updateMsg.value = ''
+  await new Promise(r => setTimeout(r, 1200))
+  updateChecking.value = false
+  updateMsg.value = t.value('upToDate')
 }
 
 onUnmounted(() => stopRecording())

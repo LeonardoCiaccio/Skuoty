@@ -65,8 +65,7 @@ export interface AIProviderConfigs {
 
 // ─── App Settings ──────────────────────────────────────────────────────────────
 export interface HotkeySettings {
-  capture:    string   // double-press trigger, e.g. 'Ctrl+C'
-  showWindow: string   // global shortcut to toggle window, e.g. 'Ctrl+Shift+Space'
+  capture: string   // trigger, e.g. '2x:Ctrl+C' or 'Ctrl+Shift+C'
 }
 
 export interface AppSettings {
@@ -93,7 +92,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   plugins:         [],
   previewMaxChars: 200,
   hotkeys: {
-    capture:    '2x:Ctrl+C',
-    showWindow: 'Ctrl+Shift+Space',
+    capture: '2x:Ctrl+C',
   },
 }
