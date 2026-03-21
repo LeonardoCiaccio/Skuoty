@@ -259,8 +259,8 @@ const sections = [
 const active = ref('general')
 
 const aiProviders = [
-  { id: 'gemini',     name: 'Gemini'     },
   { id: 'ollama',     name: 'Ollama'     },
+  { id: 'gemini',     name: 'Gemini'     },
   { id: 'openrouter', name: 'OpenRouter' },
   { id: 'anthropic',  name: 'Anthropic'  },
   { id: 'openai',     name: 'OpenAI'     },
