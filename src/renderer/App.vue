@@ -3,7 +3,7 @@
 
     <!-- Title bar (draggable) -->
     <div class="flex items-center justify-between px-3 py-2 bg-[var(--bg-deep)] border-b border-[var(--border)]" style="-webkit-app-region: drag">
-      <span class="text-xs font-semibold tracking-widest text-[var(--text-muted)] uppercase">Skuoty <span class="font-normal opacity-50">v{{ appVersion }}</span></span>
+      <span class="text-xs font-semibold tracking-widest text-[var(--text-muted)] uppercase">Skuoty</span>
       <div class="flex gap-1" style="-webkit-app-region: no-drag">
         <button
           @click="showSettings = !showSettings"
@@ -43,8 +43,6 @@ import SettingsPanel  from './components/SettingsPanel.vue'
 import { useSettings } from './composables/useSettings'
 
 const { settings, init } = useSettings()
-
-const appVersion = __APP_VERSION__
 
 // Apply theme to <html> so CSS variables are available everywhere (incl. teleported modals)
 watch(() => settings.value.theme, (t) => {

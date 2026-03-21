@@ -1,7 +1,5 @@
 /// <reference types="vite/client" />
 
-declare const __APP_VERSION__: string
-
 import { AppSettings } from '../shared/types'
 
 declare global {
@@ -14,7 +12,7 @@ declare global {
       setSettings: (settings: AppSettings) => void
       signalReady: () => void
       hide:           () => void
-      setHotkeys:     (h: { capture: string }) => void
+      setHotkeys:     (h: { capture: string; showWindow: string }) => void
       setLanguage:    (lang: string) => void
       exportToFile:   (json: string) => Promise<boolean>
       importFromFile: () => Promise<string | null>
