@@ -194,40 +194,6 @@
         </div>
       </template>
 
-      <!-- ══ SHORTCUTS ══ -->
-      <template v-if="active === 'shortcuts'">
-        <h2 class="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">{{ t('shortcuts') }}</h2>
-
-        <div class="flex flex-col gap-4">
-          <!-- Capture key -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-xs text-[var(--text-muted)]">{{ t('captureKey') }}</label>
-            <div class="flex gap-2 items-center">
-              <button
-                @click="startRecording"
-                :class="['field flex-1 text-left', recording ? 'border-[#6366f1] text-[var(--text-muted)] animate-pulse' : '']"
-              >
-                {{ recording ? t('pressKeys') : (baseAccel(settings.hotkeys.capture) || '—') }}
-              </button>
-              <label class="flex items-center gap-1.5 text-xs text-[var(--text-muted)] cursor-pointer select-none shrink-0">
-                <input type="checkbox" :checked="isDouble(settings.hotkeys.capture)" @change="toggleDouble" class="accent-[#6366f1]" />
-                {{ t('doublePress') }}
-              </label>
-            </div>
-          </div>
-
-          <p class="text-xs text-[var(--text-faint)]">{{ t('escToClear') }}</p>
-
-          <div class="flex items-center gap-2 mt-1">
-            <button
-              @click="resetHotkeys"
-              class="btn-secondary text-xs px-3 py-1.5"
-              :title="t('reset')"
-            >↺ {{ t('reset') }}</button>
-          </div>
-        </div>
-      </template>
-
       <!-- ══ BACKUP ══ -->
       <template v-if="active === 'backup'">
         <h2 class="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Backup</h2>
@@ -310,7 +276,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { useSettings } from '../composables/useSettings'
 import { useI18n } from '../composables/useI18n'
 import { testProvider, fetchOllamaModels, AIError } from '../composables/useAI'
@@ -328,7 +294,6 @@ const sections = [
   { id: 'general',   label: { en: 'General',   it: 'Generale',   es: 'General',   fr: 'Général',    de: 'Allgemein'  } },
   { id: 'ai',        label: { en: 'AI',         it: 'AI',         es: 'IA',         fr: 'IA',         de: 'KI'         } },
   { id: 'plugins',   label: { en: 'Plugins',    it: 'Plugin',     es: 'Plugins',    fr: 'Plugins',    de: 'Plugins'    } },
-  { id: 'shortcuts', label: { en: 'Shortcuts',  it: 'Scorciatoie', es: 'Atajos',   fr: 'Raccourcis',  de: 'Tastenkürzel' } },
   { id: 'backup',    label: { en: 'Backup',     it: 'Backup',     es: 'Copia',      fr: 'Sauvegarde', de: 'Sicherung'  } },
   { id: 'info',      label: { en: 'Info',       it: 'Info',       es: 'Info',       fr: 'Info',       de: 'Info'       } },
 ]
@@ -460,74 +425,6 @@ async function doImport() {
   if (err) importError.value = err
 }
 
-// ── Hotkey recorder ───────────────────────────────────────────────────────────
-const recording = ref(false)
-
-function isDouble(raw: string)   { return raw?.startsWith('2x:') ?? false }
-function baseAccel(raw: string)  { return raw?.startsWith('2x:') ? raw.slice(3) : (raw ?? '') }
-
-function toggleDouble() {
-  const cur = settings.value.hotkeys.capture
-  settings.value.hotkeys.capture = isDouble(cur) ? baseAccel(cur) : ('2x:' + baseAccel(cur))
-  applyHotkeys()
-}
-
-function startRecording() {
-  recording.value = true
-  window.addEventListener('keydown', onKeyDown, { capture: true })
-}
-
-const KEY_NAMES: Record<string, string> = {
-  ' ': 'Space', 'ArrowUp': 'Up', 'ArrowDown': 'Down',
-  'ArrowLeft': 'Left', 'ArrowRight': 'Right',
-  'Enter': 'Return', 'Delete': 'Delete', 'Backspace': 'Backspace',
-  'Tab': 'Tab', 'Insert': 'Insert', 'Home': 'Home', 'End': 'End',
-  'PageUp': 'PageUp', 'PageDown': 'PageDown',
-}
-
-function buildAccelerator(e: KeyboardEvent): string {
-  const parts: string[] = []
-  if (e.ctrlKey)  parts.push('Ctrl')
-  if (e.altKey)   parts.push('Alt')
-  if (e.shiftKey) parts.push('Shift')
-  const key = KEY_NAMES[e.key] ?? (e.key.length === 1 ? e.key.toUpperCase() : e.key)
-  parts.push(key)
-  return parts.join('+')
-}
-
-function onKeyDown(e: KeyboardEvent) {
-  e.preventDefault()
-  e.stopPropagation()
-
-  if (e.key === 'Escape') {
-    stopRecording()
-    return
-  }
-
-  if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return
-
-  const accel = buildAccelerator(e)
-  const prefix = isDouble(settings.value.hotkeys.capture) ? '2x:' : ''
-  settings.value.hotkeys.capture = prefix + accel
-  stopRecording()
-  applyHotkeys()
-}
-
-function stopRecording() {
-  recording.value = false
-  window.removeEventListener('keydown', onKeyDown, { capture: true })
-}
-
-function applyHotkeys() {
-  stopRecording()
-  window.skuoty.setHotkeys(settings.value.hotkeys)
-}
-
-function resetHotkeys() {
-  settings.value.hotkeys = { ...DEFAULT_SETTINGS.hotkeys }
-  applyHotkeys()
-}
-
 // ── Info / factory reset / update ─────────────────────────────────────────────
 const factoryResetDone = ref(false)
 const updateChecking   = ref(false)
@@ -536,7 +433,6 @@ const updateMsg        = ref('')
 function factoryReset() {
   settings.value = structuredClone(DEFAULT_SETTINGS)
   window.skuoty.setSettings(settings.value)
-  window.skuoty.setHotkeys(DEFAULT_SETTINGS.hotkeys)
   factoryResetDone.value = true
   setTimeout(() => { factoryResetDone.value = false }, 2000)
 }
@@ -548,8 +444,6 @@ async function checkUpdate() {
   updateChecking.value = false
   updateMsg.value = t.value('upToDate')
 }
-
-onUnmounted(() => stopRecording())
 
 // ── Plugin validation ─────────────────────────────────────────────────────────
 function validatePlugin(raw: string): SkuotyPlugin | null {

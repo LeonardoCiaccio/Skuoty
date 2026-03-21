@@ -4,11 +4,9 @@ import { readFileSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import path from 'path'
 import { setupStore } from './store'
-import { IPC, DEFAULT_SETTINGS } from '../shared/types'
-import type { HotkeySettings } from '../shared/types'
+import { IPC } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
-let lastHotkeys: HotkeySettings = DEFAULT_SETTINGS?.hotkeys ?? { capture: '2x:Ctrl+C' }
 let tray: Tray | null = null
 let rendererReady = false
 let isQuitting = false
@@ -156,32 +154,20 @@ function createTray() {
 
 let lastCaptureTime = 0
 
-function applyHotkeys(hotkeys: HotkeySettings) {
-  globalShortcut.unregisterAll()
-  lastCaptureTime = 0
-
-  if (hotkeys.capture) {
-    const isDouble = hotkeys.capture.startsWith('2x:')
-    const accel    = isDouble ? hotkeys.capture.slice(3) : hotkeys.capture
-    try {
-      globalShortcut.register(accel, async () => {
-        if (isDouble) {
-          const now = Date.now()
-          if (now - lastCaptureTime < 600) {
-            lastCaptureTime = 0
-            const text = clipboard.readText().trim()
-            if (text.length > 0) await showWindow(text)
-          } else {
-            lastCaptureTime = now
-          }
-        } else {
-          const text = clipboard.readText().trim()
-          if (text.length > 0) await showWindow(text)
-        }
-      })
-      console.log('[hotkey] capture registered:', hotkeys.capture)
-    } catch (e) { console.error('[hotkey] capture error:', e) }
-  }
+function registerHotkey() {
+  try {
+    globalShortcut.register('Ctrl+C', async () => {
+      const now = Date.now()
+      if (now - lastCaptureTime < 600) {
+        lastCaptureTime = 0
+        const text = clipboard.readText().trim()
+        if (text.length > 0) await showWindow(text)
+      } else {
+        lastCaptureTime = now
+      }
+    })
+    console.log('[hotkey] Ctrl+C+C registered')
+  } catch (e) { console.error('[hotkey] error:', e) }
 }
 
 // ─── Window ───────────────────────────────────────────────────────────────────
@@ -247,21 +233,9 @@ function setupIPC() {
   })
 
   ipcMain.handle(IPC.SETTINGS_GET, () => setupStore().get('settings'))
-  ipcMain.on(IPC.SETTINGS_SET, (_e, s) => {
-    setupStore().set('settings', s)
-    const incoming = (s as { hotkeys?: HotkeySettings })?.hotkeys
-    if (incoming) {
-      applyHotkeys(incoming)
-      lastHotkeys = incoming
-    }
-  })
+  ipcMain.on(IPC.SETTINGS_SET, (_e, s) => { setupStore().set('settings', s) })
 
   ipcMain.on(IPC.WINDOW_HIDE, () => { mainWindow?.hide() })
-
-  ipcMain.on(IPC.HOTKEYS_CHANGED, (_e, hotkeys: HotkeySettings) => {
-    applyHotkeys(hotkeys)
-    lastHotkeys = hotkeys
-  })
 
   ipcMain.on(IPC.LANGUAGE_CHANGED, (_e, lang: string) => {
     currentLang = lang
@@ -307,10 +281,6 @@ app.whenReady().then(() => {
   app.on('window-all-closed', () => { /* stay in tray */ })
   app.on('before-quit', () => { isQuitting = true })
 
-  const savedSettings = setupStore().get('settings') as { hotkeys?: HotkeySettings } | null
-  const defaults: HotkeySettings = DEFAULT_SETTINGS?.hotkeys ?? { capture: '2x:Ctrl+C' }
-  const hotkeys: HotkeySettings = { ...defaults, ...(savedSettings?.hotkeys ?? {}) }
-
   if (process.platform === 'win32') {
     writePasteScripts()
     startDaemon()   // compiles Win32 type once (~300 ms), then stays ready
@@ -319,8 +289,6 @@ app.whenReady().then(() => {
   createWindow()
   createTray()
   setupIPC()
-
-  lastHotkeys = hotkeys
-  applyHotkeys(hotkeys)
-  console.log(`[skuoty] ready — ${hotkeys.capture} to capture`)
+  registerHotkey()
+  console.log('[skuoty] ready — Ctrl+C+C to capture')
 })

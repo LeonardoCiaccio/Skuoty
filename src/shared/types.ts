@@ -9,7 +9,6 @@ export const IPC = {
   WINDOW_SHOW:        'window:show',
   WINDOW_HIDE:        'window:hide',
   LANGUAGE_CHANGED:   'language:changed',
-  HOTKEYS_CHANGED:    'hotkeys:changed',
   EXPORT_FILE:        'backup:export',
   IMPORT_FILE:        'backup:import',
 } as const
@@ -64,10 +63,6 @@ export interface AIProviderConfigs {
 }
 
 // ─── App Settings ──────────────────────────────────────────────────────────────
-export interface HotkeySettings {
-  capture: string   // trigger, e.g. '2x:Ctrl+C' or 'Ctrl+Shift+C'
-}
-
 export interface AppSettings {
   language:        string
   theme:           'dark' | 'light'
@@ -75,7 +70,6 @@ export interface AppSettings {
   providers:       AIProviderConfigs
   plugins:         SkuotyPlugin[]
   previewMaxChars: number
-  hotkeys:         HotkeySettings
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -91,7 +85,4 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
   plugins:         [],
   previewMaxChars: 200,
-  hotkeys: {
-    capture: '2x:Ctrl+C',
-  },
 }

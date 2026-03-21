@@ -14,7 +14,6 @@ declare global {
       setSettings: (settings: AppSettings) => void
       signalReady: () => void
       hide:           () => void
-      setHotkeys:     (h: { capture: string }) => void
       setLanguage:    (lang: string) => void
       exportToFile:   (json: string) => Promise<boolean>
       importFromFile: () => Promise<string | null>
