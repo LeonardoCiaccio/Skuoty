@@ -209,6 +209,7 @@
             <p class="text-xs text-[var(--text-muted)] mb-2">{{ t('importDesc') }}</p>
             <p v-if="importError" class="text-xs text-red-400 mb-1">{{ importError }}</p>
             <button @click="doImport" :disabled="importing" class="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">{{ t('import') }}</button>
+            <p v-if="importDone" class="text-xs text-emerald-500 mt-1">{{ t('importedFromFile') }}</p>
           </div>
         </div>
       </template>
@@ -400,6 +401,7 @@ function loadPlugin() {
 
 // ── Backup ────────────────────────────────────────────────────────────────────
 const importError = ref('')
+const importDone  = ref(false)
 const exportDone  = ref(false)
 const exporting   = ref(false)
 const importing   = ref(false)
@@ -418,11 +420,14 @@ async function doExport() {
 async function doImport() {
   importing.value = true
   importError.value = ''
+  importDone.value = false
   const json = await window.skuoty.importFromFile()
   importing.value = false
   if (!json) return
   const err = importSettings(json)
-  if (err) importError.value = err
+  if (err) { importError.value = err; return }
+  importDone.value = true
+  setTimeout(() => { importDone.value = false }, 3000)
 }
 
 // ── Info / factory reset / update ─────────────────────────────────────────────
