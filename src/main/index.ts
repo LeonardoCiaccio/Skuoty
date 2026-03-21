@@ -157,21 +157,19 @@ function createTray() {
 let showWindowAccelerator = ''
 
 function registerShowWindow(accelerator: string) {
-  if (showWindowAccelerator) {
-    try { globalShortcut.unregister(showWindowAccelerator) } catch { /* ignore */ }
-  }
+  globalShortcut.unregisterAll()
   showWindowAccelerator = ''
   if (!accelerator) return
   try {
-    const ok = globalShortcut.register(accelerator, () => {
+    globalShortcut.register(accelerator, () => {
       if (!mainWindow) return
       if (mainWindow.isVisible()) mainWindow.hide()
       else { mainWindow.show(); mainWindow.focus() }
     })
-    if (ok) showWindowAccelerator = accelerator
-    else console.warn('[hotkey] globalShortcut already registered or invalid:', accelerator)
+    showWindowAccelerator = accelerator
+    console.log('[hotkey] showWindow registered:', accelerator)
   } catch (e) {
-    console.warn('[hotkey] globalShortcut error:', e)
+    console.error('[hotkey] globalShortcut error:', e)
   }
 }
 
