@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain, clipboard, screen, Tray, Menu, nativeImage } from 'electron'
+import { app, BrowserWindow, ipcMain, clipboard, screen, Tray, Menu, nativeImage, dialog } from 'electron'
 import { execSync } from 'child_process'
+import { readFileSync, writeFileSync } from 'fs'
 import path from 'path'
 import { setupStore } from './store'
 import { IPC } from '../shared/types'
@@ -189,6 +190,27 @@ function setupIPC() {
   ipcMain.on(IPC.LANGUAGE_CHANGED, (_event, lang: string) => {
     currentLang = lang
     if (tray) tray.setContextMenu(buildTrayMenu())
+  })
+
+  ipcMain.handle(IPC.EXPORT_FILE, async (_event, json: string) => {
+    const { filePath, canceled } = await dialog.showSaveDialog({
+      title: 'Export Skuoty settings',
+      defaultPath: 'skuoty-backup.json',
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+    })
+    if (canceled || !filePath) return false
+    writeFileSync(filePath, json, 'utf-8')
+    return true
+  })
+
+  ipcMain.handle(IPC.IMPORT_FILE, async () => {
+    const { filePaths, canceled } = await dialog.showOpenDialog({
+      title: 'Import Skuoty settings',
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+      properties: ['openFile'],
+    })
+    if (canceled || !filePaths[0]) return null
+    return readFileSync(filePaths[0], 'utf-8')
   })
 }
 

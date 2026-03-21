@@ -196,15 +196,14 @@
         <div class="flex flex-col gap-4">
           <div>
             <p class="text-xs text-[var(--text-muted)] mb-2">{{ t('exportDesc') }}</p>
-            <button @click="doExport" class="btn-primary text-xs px-3 py-1.5">{{ t('export') }}</button>
-            <p v-if="exportDone" class="text-xs text-emerald-400 mt-1">{{ t('copiedToClipboard') }}</p>
+            <button @click="doExport" :disabled="exporting" class="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">{{ t('export') }}</button>
+            <p v-if="exportDone" class="text-xs text-emerald-500 mt-1">{{ t('exportedToFile') }}</p>
           </div>
 
           <div class="border-t border-[var(--border)] pt-3">
             <p class="text-xs text-[var(--text-muted)] mb-2">{{ t('importDesc') }}</p>
-            <textarea v-model="importJson" rows="6" :placeholder="t('pasteJson')" class="field w-full resize-none font-mono text-xs" />
-            <p v-if="importError" class="text-xs text-red-400 mt-1">{{ importError }}</p>
-            <button @click="doImport" class="mt-2 btn-primary text-xs px-3 py-1.5">{{ t('import') }}</button>
+            <p v-if="importError" class="text-xs text-red-400 mb-1">{{ importError }}</p>
+            <button @click="doImport" :disabled="importing" class="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">{{ t('import') }}</button>
           </div>
         </div>
       </template>
@@ -351,21 +350,30 @@ function loadPlugin() {
 }
 
 // ── Backup ────────────────────────────────────────────────────────────────────
-const importJson  = ref('')
 const importError = ref('')
 const exportDone  = ref(false)
+const exporting   = ref(false)
+const importing   = ref(false)
 
-function doExport() {
-  navigator.clipboard.writeText(exportSettings()).then(() => {
+async function doExport() {
+  exporting.value = true
+  exportDone.value = false
+  const saved = await window.skuoty.exportToFile(exportSettings())
+  exporting.value = false
+  if (saved) {
     exportDone.value = true
-    setTimeout(() => { exportDone.value = false }, 2000)
-  })
+    setTimeout(() => { exportDone.value = false }, 3000)
+  }
 }
-function doImport() {
+
+async function doImport() {
+  importing.value = true
   importError.value = ''
-  const err = importSettings(importJson.value)
-  if (err) { importError.value = err; return }
-  importJson.value = ''
+  const json = await window.skuoty.importFromFile()
+  importing.value = false
+  if (!json) return
+  const err = importSettings(json)
+  if (err) importError.value = err
 }
 
 // ── Plugin validation ─────────────────────────────────────────────────────────

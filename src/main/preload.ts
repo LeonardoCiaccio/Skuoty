@@ -8,6 +8,8 @@ const IPC_SETTINGS_GET = 'settings:get'
 const IPC_SETTINGS_SET = 'settings:set'
 const IPC_RENDERER_READY = 'renderer:ready'
 const IPC_LANGUAGE_CHANGED = 'language:changed'
+const IPC_EXPORT_FILE = 'backup:export'
+const IPC_IMPORT_FILE = 'backup:import'
 
 const { contextBridge, ipcRenderer } = require('electron') as typeof import('electron')
 
@@ -35,5 +37,7 @@ contextBridge.exposeInMainWorld('skuoty', {
   getSettings: () => ipcRenderer.invoke(IPC_SETTINGS_GET),
   setSettings: (settings: unknown) => ipcRenderer.send(IPC_SETTINGS_SET, settings),
   signalReady: () => ipcRenderer.send(IPC_RENDERER_READY),
-  setLanguage: (lang: string) => ipcRenderer.send(IPC_LANGUAGE_CHANGED, lang),
+  setLanguage:    (lang: string) => ipcRenderer.send(IPC_LANGUAGE_CHANGED, lang),
+  exportToFile:   (json: string) => ipcRenderer.invoke(IPC_EXPORT_FILE, json),
+  importFromFile: ()             => ipcRenderer.invoke(IPC_IMPORT_FILE),
 })

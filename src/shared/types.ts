@@ -9,6 +9,8 @@ export const IPC = {
   WINDOW_SHOW:        'window:show',
   WINDOW_HIDE:        'window:hide',
   LANGUAGE_CHANGED:   'language:changed',
+  EXPORT_FILE:        'backup:export',
+  IMPORT_FILE:        'backup:import',
 } as const
 
 // ─── i18n ──────────────────────────────────────────────────────────────────────

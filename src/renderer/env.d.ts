@@ -11,7 +11,9 @@ declare global {
       getSettings: () => Promise<AppSettings>
       setSettings: (settings: AppSettings) => void
       signalReady: () => void
-      setLanguage: (lang: string) => void
+      setLanguage:    (lang: string) => void
+      exportToFile:   (json: string) => Promise<boolean>
+      importFromFile: () => Promise<string | null>
     }
   }
 }
