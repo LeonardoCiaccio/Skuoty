@@ -40,7 +40,7 @@ contextBridge.exposeInMainWorld('skuoty', {
   setSettings: (settings: unknown) => ipcRenderer.send(IPC_SETTINGS_SET, settings),
   signalReady: () => ipcRenderer.send(IPC_RENDERER_READY),
   hide:           () => ipcRenderer.send(IPC_WINDOW_HIDE),
-  setHotkeys:     (h: { capture: string; showWindow: string }) => ipcRenderer.send(IPC_HOTKEYS_CHANGED, h),
+  setHotkeys:     (h: { capture: string }) => ipcRenderer.send(IPC_HOTKEYS_CHANGED, h),
   setLanguage:    (lang: string) => ipcRenderer.send(IPC_LANGUAGE_CHANGED, lang),
   exportToFile:   (json: string) => ipcRenderer.invoke(IPC_EXPORT_FILE, json),
   importFromFile: ()             => ipcRenderer.invoke(IPC_IMPORT_FILE),

@@ -8,7 +8,7 @@ import { IPC, DEFAULT_SETTINGS } from '../shared/types'
 import type { HotkeySettings } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
-let lastHotkeys: HotkeySettings = DEFAULT_SETTINGS.hotkeys
+let lastHotkeys: HotkeySettings = DEFAULT_SETTINGS?.hotkeys ?? { capture: '2x:Ctrl+C' }
 let tray: Tray | null = null
 let rendererReady = false
 let isQuitting = false
@@ -182,19 +182,6 @@ function applyHotkeys(hotkeys: HotkeySettings) {
       console.log('[hotkey] capture registered:', hotkeys.capture)
     } catch (e) { console.error('[hotkey] capture error:', e) }
   }
-
-  const showAccel = hotkeys.showWindow?.startsWith('2x:')
-    ? hotkeys.showWindow.slice(3) : hotkeys.showWindow
-  if (showAccel && showAccel !== (hotkeys.capture.startsWith('2x:') ? hotkeys.capture.slice(3) : hotkeys.capture)) {
-    try {
-      globalShortcut.register(showAccel, () => {
-        if (!mainWindow) return
-        if (mainWindow.isVisible()) mainWindow.hide()
-        else { mainWindow.show(); mainWindow.focus() }
-      })
-      console.log('[hotkey] showWindow registered:', showAccel)
-    } catch (e) { console.error('[hotkey] showWindow error:', e) }
-  }
 }
 
 // ─── Window ───────────────────────────────────────────────────────────────────
@@ -263,7 +250,7 @@ function setupIPC() {
   ipcMain.on(IPC.SETTINGS_SET, (_e, s) => {
     setupStore().set('settings', s)
     const incoming = (s as { hotkeys?: HotkeySettings })?.hotkeys
-    if (incoming && (incoming.capture !== lastHotkeys.capture || incoming.showWindow !== lastHotkeys.showWindow)) {
+    if (incoming) {
       applyHotkeys(incoming)
       lastHotkeys = incoming
     }
@@ -304,12 +291,25 @@ function setupIPC() {
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 
+// Allow multiple instances only in dev mode (hot-reload)
+if (!isDev) {
+  const gotLock = app.requestSingleInstanceLock()
+  if (!gotLock) {
+    app.quit()
+  } else {
+    app.on('second-instance', () => {
+      if (mainWindow) { mainWindow.show(); mainWindow.focus() }
+    })
+  }
+}
+
 app.whenReady().then(() => {
   app.on('window-all-closed', () => { /* stay in tray */ })
   app.on('before-quit', () => { isQuitting = true })
 
   const savedSettings = setupStore().get('settings') as { hotkeys?: HotkeySettings } | null
-  const hotkeys: HotkeySettings = { ...DEFAULT_SETTINGS.hotkeys, ...(savedSettings?.hotkeys ?? {}) }
+  const defaults: HotkeySettings = DEFAULT_SETTINGS?.hotkeys ?? { capture: '2x:Ctrl+C' }
+  const hotkeys: HotkeySettings = { ...defaults, ...(savedSettings?.hotkeys ?? {}) }
 
   if (process.platform === 'win32') {
     writePasteScripts()
@@ -322,5 +322,5 @@ app.whenReady().then(() => {
 
   lastHotkeys = hotkeys
   applyHotkeys(hotkeys)
-  console.log(`[skuoty] ready — ${hotkeys.capture} to capture, ${hotkeys.showWindow} to toggle`)
+  console.log(`[skuoty] ready — ${hotkeys.capture} to capture`)
 })

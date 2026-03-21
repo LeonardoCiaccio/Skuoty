@@ -4,7 +4,7 @@
   "description": "AI-powered text processor triggered by double Ctrl+C",
   "main": "dist/main/main/index.js",
   "scripts": {
-    "dev": "concurrently \"npm run dev:renderer\" \"npm run dev:main\" \"npm run dev:electron\"",
+    "dev": "npm run build:main && concurrently \"npm run dev:renderer\" \"npm run dev:main\" \"npm run dev:electron\"",
     "dev:renderer": "vite",
     "dev:main": "tsc -p tsconfig.main.json --watch",
     "dev:electron": "wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .",

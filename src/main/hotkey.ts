@@ -12,7 +12,7 @@ function parseAccelerator(accelerator: string) {
   const parts = accelerator.split('+')
   const keyName = parts[parts.length - 1].toUpperCase()
   captureModifier = parts.includes('Alt') ? 'Alt' : 'Ctrl'
-  captureKeyCode  = ((UiohookKey as Record<string, number>)[keyName] ?? UiohookKey.C) as typeof UiohookKey.C
+  captureKeyCode  = (UiohookKey as Record<string, number>)[keyName] ?? UiohookKey.C
 }
 
 function isModifierKey(keycode: number): boolean {
