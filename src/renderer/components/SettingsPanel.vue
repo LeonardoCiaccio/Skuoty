@@ -225,6 +225,9 @@
             </button>
             <p class="text-xs text-[var(--text-faint)]">{{ t('escToClear') }}</p>
           </div>
+
+          <button @click="applyHotkeys" class="btn-primary text-xs px-3 py-1.5 mt-2">{{ t('save') }}</button>
+          <p v-if="hotkeySaved" class="text-xs text-emerald-500 mt-1">{{ t('exportedToFile').replace('!','') }} ✓</p>
         </div>
       </template>
 
@@ -463,12 +466,18 @@ function onKeyDown(e: KeyboardEvent) {
   if (recording.value) settings.value.hotkeys[recording.value] = accelerator
 
   stopRecording()
-  window.skuoty.setHotkeys(settings.value.hotkeys)
 }
 
 function stopRecording() {
   recording.value = null
   window.removeEventListener('keydown', onKeyDown, { capture: true })
+}
+
+const hotkeySaved = ref(false)
+function applyHotkeys() {
+  window.skuoty.setHotkeys(settings.value.hotkeys)
+  hotkeySaved.value = true
+  setTimeout(() => { hotkeySaved.value = false }, 2000)
 }
 
 onUnmounted(() => stopRecording())

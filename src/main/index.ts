@@ -9,6 +9,7 @@ import type { HotkeySettings } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
 let updateCaptureKey: ((accelerator: string) => void) | null = null
+let lastHotkeys: HotkeySettings = DEFAULT_SETTINGS.hotkeys
 let tray: Tray | null = null
 let rendererReady = false
 let isQuitting = false
@@ -236,13 +237,22 @@ function setupIPC() {
   })
 
   ipcMain.handle(IPC.SETTINGS_GET, () => setupStore().get('settings'))
-  ipcMain.on(IPC.SETTINGS_SET, (_e, s) => setupStore().set('settings', s))
+  ipcMain.on(IPC.SETTINGS_SET, (_e, s) => {
+    setupStore().set('settings', s)
+    const incoming = (s as { hotkeys?: HotkeySettings })?.hotkeys
+    if (incoming) {
+      if (incoming.capture    !== lastHotkeys.capture)    updateCaptureKey?.(incoming.capture)
+      if (incoming.showWindow !== lastHotkeys.showWindow) registerShowWindow(incoming.showWindow)
+      lastHotkeys = incoming
+    }
+  })
 
   ipcMain.on(IPC.WINDOW_HIDE, () => { mainWindow?.hide() })
 
   ipcMain.on(IPC.HOTKEYS_CHANGED, (_e, hotkeys: HotkeySettings) => {
     updateCaptureKey?.(hotkeys.capture)
     registerShowWindow(hotkeys.showWindow)
+    lastHotkeys = hotkeys
   })
 
   ipcMain.on(IPC.LANGUAGE_CHANGED, (_e, lang: string) => {
@@ -289,6 +299,7 @@ app.whenReady().then(() => {
   createTray()
   setupIPC()
 
+  lastHotkeys = hotkeys
   registerShowWindow(hotkeys.showWindow)
 
   try {
