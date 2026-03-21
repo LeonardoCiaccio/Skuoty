@@ -174,7 +174,7 @@ function setupIPC() {
   ipcMain.on(IPC.PASTE_BACK, (_event, text: string) => {
     clipboard.writeText(text)
     mainWindow?.hide()
-    setTimeout(simulatePaste, 200)
+    setTimeout(simulatePaste, 500)
   })
 
   ipcMain.handle(IPC.SETTINGS_GET, () => {

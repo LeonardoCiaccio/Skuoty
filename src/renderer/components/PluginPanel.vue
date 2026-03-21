@@ -117,6 +117,7 @@ async function run() {
   error.value = ''
   try {
     const result = await runPlugin(activePlugin.value, selectedOption.value, context.value, settings.value)
+    isRunning.value = false
     emit('result', result)
     closePopup()
   } catch (e: unknown) {
