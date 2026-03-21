@@ -10,7 +10,8 @@
           class="p-1 rounded hover:bg-[var(--bg-element)] text-[var(--text-second)] hover:text-[var(--text-primary)] transition-colors"
           title="Settings"
         >
-          <Cog6ToothIcon class="w-4 h-4" />
+          <ChevronRightIcon v-if="showSettings" class="w-4 h-4" />
+          <Cog6ToothIcon v-else class="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -21,7 +22,7 @@
     <!-- Main content -->
     <template v-else>
       <TextPreview :text="selectionText" :max-chars="settings.previewMaxChars" />
-      <ElaboratedText v-model="elaboratedText" :has-target="hasTarget" @paste-back="pasteBack" />
+      <ElaboratedText v-model="elaboratedText" :has-target="hasTarget" @paste-back="pasteBack" @reset="resetSession" />
       <PluginPanel
         :selection-text="selectionText"
         :elaborated-text="elaboratedText"
@@ -34,7 +35,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import { Cog6ToothIcon } from '@heroicons/vue/24/outline'
+import { Cog6ToothIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import TextPreview    from './components/TextPreview.vue'
 import ElaboratedText from './components/ElaboratedText.vue'
 import PluginPanel    from './components/PluginPanel.vue'
@@ -69,6 +70,12 @@ onMounted(() => {
   window.skuoty.signalReady()
   window.skuoty.setLanguage(settings.value.language)
 })
+
+function resetSession() {
+  selectionText.value  = ''
+  elaboratedText.value = ''
+  hasTarget.value      = false
+}
 
 function pasteBack() {
   window.skuoty.pasteBack(elaboratedText.value)

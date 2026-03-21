@@ -30,6 +30,14 @@
         >
           <ArrowUturnLeftIcon class="w-3.5 h-3.5" />
         </button>
+        <button
+          @click="$emit('reset')"
+          :disabled="!modelValue && !hasTarget"
+          class="p-1.5 rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-second)] hover:text-[var(--text-primary)] transition-colors"
+          :title="t('clearSession')"
+        >
+          <XMarkIcon class="w-3.5 h-3.5" />
+        </button>
       </div>
     </div>
   </div>
@@ -37,13 +45,14 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ClipboardDocumentIcon, ClipboardDocumentCheckIcon, ArrowUturnLeftIcon } from '@heroicons/vue/24/outline'
+import { ClipboardDocumentIcon, ClipboardDocumentCheckIcon, ArrowUturnLeftIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { useI18n } from '../composables/useI18n'
 
 const props = defineProps<{ modelValue: string; hasTarget: boolean }>()
 defineEmits<{
   'update:modelValue': [value: string]
   'paste-back': []
+  'reset': []
 }>()
 
 const { t } = useI18n()
