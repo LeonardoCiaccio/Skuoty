@@ -291,6 +291,18 @@ function setupIPC() {
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
 
+// Allow multiple instances only in dev mode (hot-reload)
+if (!isDev) {
+  const gotLock = app.requestSingleInstanceLock()
+  if (!gotLock) {
+    app.quit()
+  } else {
+    app.on('second-instance', () => {
+      if (mainWindow) { mainWindow.show(); mainWindow.focus() }
+    })
+  }
+}
+
 app.whenReady().then(() => {
   app.on('window-all-closed', () => { /* stay in tray */ })
   app.on('before-quit', () => { isQuitting = true })
