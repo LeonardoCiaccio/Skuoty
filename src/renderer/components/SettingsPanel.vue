@@ -148,7 +148,21 @@
       <template v-if="active === 'plugins'">
         <h2 class="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">{{ t('plugins') }}</h2>
 
-        <div class="flex flex-col gap-2 mb-4">
+        <!-- Load new plugin (first) -->
+        <div class="mb-4">
+          <p class="text-xs text-[var(--text-muted)] mb-2">{{ t('loadPlugin') }}</p>
+          <textarea
+            v-model="loadJson"
+            rows="5"
+            placeholder='{&#10;  "name": "my-plugin",&#10;  "label": [{"en":"My Plugin"}],&#10;  "options": "...",&#10;  "prompt": "{{option}} {{context}}"&#10;}'
+            class="field w-full resize-none font-mono text-xs"
+          />
+          <p v-if="loadError" class="text-xs text-red-400 mt-1">{{ loadError }}</p>
+          <button @click="loadPlugin" class="mt-2 btn-primary text-xs px-3 py-1.5">{{ t('load') }}</button>
+        </div>
+
+        <!-- Installed plugins (after) -->
+        <div class="border-t border-[var(--border)] pt-3 flex flex-col gap-2">
           <div
             v-for="(plugin, idx) in settings.plugins"
             :key="plugin.name"
@@ -172,18 +186,6 @@
           <p v-if="!settings.plugins.length" class="text-xs text-[var(--text-faint)] italic">
             {{ t('noPluginsList') }}
           </p>
-        </div>
-
-        <div class="border-t border-[var(--border)] pt-3">
-          <p class="text-xs text-[var(--text-muted)] mb-2">{{ t('loadPlugin') }}</p>
-          <textarea
-            v-model="loadJson"
-            rows="5"
-            placeholder='{&#10;  "name": "my-plugin",&#10;  "label": [{"en":"My Plugin"}],&#10;  "options": "...",&#10;  "prompt": "{{option}} {{context}}"&#10;}'
-            class="field w-full resize-none font-mono text-xs"
-          />
-          <p v-if="loadError" class="text-xs text-red-400 mt-1">{{ loadError }}</p>
-          <button @click="loadPlugin" class="mt-2 btn-primary text-xs px-3 py-1.5">{{ t('load') }}</button>
         </div>
       </template>
 

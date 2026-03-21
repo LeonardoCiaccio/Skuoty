@@ -41,7 +41,7 @@ import PluginPanel    from './components/PluginPanel.vue'
 import SettingsPanel  from './components/SettingsPanel.vue'
 import { useSettings } from './composables/useSettings'
 
-const { settings } = useSettings()
+const { settings, init } = useSettings()
 
 // Apply theme to <html> so CSS variables are available everywhere (incl. teleported modals)
 watch(() => settings.value.theme, (t) => {
@@ -58,6 +58,7 @@ const elaboratedText = ref('')
 const showSettings   = ref(false)
 
 onMounted(() => {
+  init()
   window.skuoty.onClipboardCaptured((text) => {
     selectionText.value  = text
     elaboratedText.value = ''

@@ -4,51 +4,70 @@ import type { AppSettings } from '../../shared/types'
 
 const STORAGE_KEY = 'skuoty-settings'
 
-function loadFromStorage(): AppSettings {
+function merge(saved: Partial<AppSettings>): AppSettings {
+  return {
+    ...DEFAULT_SETTINGS,
+    ...saved,
+    providers: { ...DEFAULT_SETTINGS.providers, ...(saved.providers ?? {}) },
+    plugins: saved.plugins ?? [],
+    theme: saved.theme === 'light' ? 'light' : 'dark',
+  }
+}
+
+function fromLocalStorage(): AppSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return structuredClone(DEFAULT_SETTINGS)
-    const parsed = JSON.parse(raw) as Partial<AppSettings>
-    return {
-      ...DEFAULT_SETTINGS,
-      ...parsed,
-      providers: { ...DEFAULT_SETTINGS.providers, ...(parsed.providers ?? {}) },
-      plugins: parsed.plugins ?? [],
-      theme: (parsed.theme === 'light' ? 'light' : 'dark') as 'dark' | 'light',
-    }
+    return raw ? merge(JSON.parse(raw) as Partial<AppSettings>) : structuredClone(DEFAULT_SETTINGS)
   } catch {
     return structuredClone(DEFAULT_SETTINGS)
   }
 }
 
-// Module-level singleton: all components share the same reactive state
-const settings = ref<AppSettings>(loadFromStorage())
+// Module-level singleton
+const settings = ref<AppSettings>(fromLocalStorage())
+const storeReady = ref(false)
 
-// watchEffect tracks every reactive property accessed by JSON.stringify, so any
-// nested change (api key, plugin, language, …) automatically triggers a save.
+// Save on every change:
+//  - always to localStorage (sync, fast)
+//  - to electron-store via IPC once init() has completed (reliable across restarts)
 watchEffect(() => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings.value))
+  const snapshot = JSON.parse(JSON.stringify(settings.value)) as AppSettings
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot))
+  if (storeReady.value) {
+    window.skuoty.setSettings(snapshot)
+  }
 })
 
 export function useSettings() {
+  /**
+   * Must be called once from App.vue onMounted.
+   * Loads from electron-store (authoritative) only when localStorage is empty —
+   * i.e. first run or after the browser storage was cleared.
+   */
+  async function init() {
+    if (storeReady.value) return
+    try {
+      const hasCache = localStorage.getItem(STORAGE_KEY) !== null
+      if (!hasCache) {
+        const saved = await window.skuoty.getSettings() as Partial<AppSettings> | null
+        if (saved) settings.value = merge(saved)
+      }
+    } catch { /* keep current */ }
+    storeReady.value = true
+  }
+
   function exportSettings(): string {
     return JSON.stringify(settings.value, null, 2)
   }
 
   function importSettings(json: string): string | null {
     try {
-      const parsed = JSON.parse(json) as Partial<AppSettings>
-      settings.value = {
-        ...DEFAULT_SETTINGS,
-        ...parsed,
-        providers: { ...DEFAULT_SETTINGS.providers, ...(parsed.providers ?? {}) },
-        plugins: parsed.plugins ?? [],
-      }
+      settings.value = merge(JSON.parse(json) as Partial<AppSettings>)
       return null
     } catch (e) {
       return e instanceof Error ? e.message : 'Invalid JSON'
     }
   }
 
-  return { settings, exportSettings, importSettings }
+  return { settings, init, exportSettings, importSettings }
 }
