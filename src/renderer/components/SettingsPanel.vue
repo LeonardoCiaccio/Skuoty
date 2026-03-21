@@ -226,8 +226,14 @@
             <p class="text-xs text-[var(--text-faint)]">{{ t('escToClear') }}</p>
           </div>
 
-          <button @click="applyHotkeys" class="btn-primary text-xs px-3 py-1.5 mt-2">{{ t('save') }}</button>
-          <p v-if="hotkeySaved" class="text-xs text-emerald-500 mt-1">{{ t('exportedToFile').replace('!','') }} ✓</p>
+          <div class="flex items-center gap-2 mt-2">
+            <button
+              v-if="hotkeyDirty"
+              @click="applyHotkeys"
+              class="btn-primary text-xs px-3 py-1.5"
+            >{{ t('save') }}</button>
+            <span v-if="hotkeySaved" class="text-xs text-emerald-500">✓ {{ t('applied') }}</span>
+          </div>
         </div>
       </template>
 
@@ -463,7 +469,10 @@ function onKeyDown(e: KeyboardEvent) {
   parts.push(key)
 
   const accelerator = parts.join('+')
-  if (recording.value) settings.value.hotkeys[recording.value] = accelerator
+  if (recording.value) {
+    settings.value.hotkeys[recording.value] = accelerator
+    hotkeyDirty.value = true
+  }
 
   stopRecording()
 }
@@ -473,9 +482,12 @@ function stopRecording() {
   window.removeEventListener('keydown', onKeyDown, { capture: true })
 }
 
-const hotkeySaved = ref(false)
+const hotkeySaved  = ref(false)
+const hotkeyDirty  = ref(false)
+
 function applyHotkeys() {
   window.skuoty.setHotkeys(settings.value.hotkeys)
+  hotkeyDirty.value = false
   hotkeySaved.value = true
   setTimeout(() => { hotkeySaved.value = false }, 2000)
 }
