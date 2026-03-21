@@ -8,7 +8,6 @@ import { IPC, DEFAULT_SETTINGS } from '../shared/types'
 import type { HotkeySettings } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
-let updateCaptureKey: ((accelerator: string) => void) | null = null
 let lastHotkeys: HotkeySettings = DEFAULT_SETTINGS.hotkeys
 let tray: Tray | null = null
 let rendererReady = false
@@ -153,24 +152,48 @@ function createTray() {
   })
 }
 
-// ─── Global shortcut: show/hide window ────────────────────────────────────────
+// ─── Global shortcuts ─────────────────────────────────────────────────────────
 
-let showWindowAccelerator = ''
+let lastCaptureTime = 0
 
-function registerShowWindow(accelerator: string) {
+function applyHotkeys(hotkeys: HotkeySettings) {
   globalShortcut.unregisterAll()
-  showWindowAccelerator = ''
-  if (!accelerator) return
-  try {
-    globalShortcut.register(accelerator, () => {
-      if (!mainWindow) return
-      if (mainWindow.isVisible()) mainWindow.hide()
-      else { mainWindow.show(); mainWindow.focus() }
-    })
-    showWindowAccelerator = accelerator
-    console.log('[hotkey] showWindow registered:', accelerator)
-  } catch (e) {
-    console.error('[hotkey] globalShortcut error:', e)
+  lastCaptureTime = 0
+
+  if (hotkeys.capture) {
+    const isDouble = hotkeys.capture.startsWith('2x:')
+    const accel    = isDouble ? hotkeys.capture.slice(3) : hotkeys.capture
+    try {
+      globalShortcut.register(accel, async () => {
+        if (isDouble) {
+          const now = Date.now()
+          if (now - lastCaptureTime < 600) {
+            lastCaptureTime = 0
+            const text = clipboard.readText().trim()
+            if (text.length > 0) await showWindow(text)
+          } else {
+            lastCaptureTime = now
+          }
+        } else {
+          const text = clipboard.readText().trim()
+          if (text.length > 0) await showWindow(text)
+        }
+      })
+      console.log('[hotkey] capture registered:', hotkeys.capture)
+    } catch (e) { console.error('[hotkey] capture error:', e) }
+  }
+
+  const showAccel = hotkeys.showWindow?.startsWith('2x:')
+    ? hotkeys.showWindow.slice(3) : hotkeys.showWindow
+  if (showAccel && showAccel !== (hotkeys.capture.startsWith('2x:') ? hotkeys.capture.slice(3) : hotkeys.capture)) {
+    try {
+      globalShortcut.register(showAccel, () => {
+        if (!mainWindow) return
+        if (mainWindow.isVisible()) mainWindow.hide()
+        else { mainWindow.show(); mainWindow.focus() }
+      })
+      console.log('[hotkey] showWindow registered:', showAccel)
+    } catch (e) { console.error('[hotkey] showWindow error:', e) }
   }
 }
 
@@ -240,9 +263,8 @@ function setupIPC() {
   ipcMain.on(IPC.SETTINGS_SET, (_e, s) => {
     setupStore().set('settings', s)
     const incoming = (s as { hotkeys?: HotkeySettings })?.hotkeys
-    if (incoming) {
-      if (incoming.capture    !== lastHotkeys.capture)    updateCaptureKey?.(incoming.capture)
-      if (incoming.showWindow !== lastHotkeys.showWindow) registerShowWindow(incoming.showWindow)
+    if (incoming && (incoming.capture !== lastHotkeys.capture || incoming.showWindow !== lastHotkeys.showWindow)) {
+      applyHotkeys(incoming)
       lastHotkeys = incoming
     }
   })
@@ -250,8 +272,7 @@ function setupIPC() {
   ipcMain.on(IPC.WINDOW_HIDE, () => { mainWindow?.hide() })
 
   ipcMain.on(IPC.HOTKEYS_CHANGED, (_e, hotkeys: HotkeySettings) => {
-    updateCaptureKey?.(hotkeys.capture)
-    registerShowWindow(hotkeys.showWindow)
+    applyHotkeys(hotkeys)
     lastHotkeys = hotkeys
   })
 
@@ -300,14 +321,6 @@ app.whenReady().then(() => {
   setupIPC()
 
   lastHotkeys = hotkeys
-  registerShowWindow(hotkeys.showWindow)
-
-  try {
-    const hotkeyModule = require('./hotkey') as typeof import('./hotkey')
-    updateCaptureKey = hotkeyModule.updateCaptureKey
-    hotkeyModule.setupHotkey((text) => showWindow(text), hotkeys.capture)
-    console.log(`[skuoty] ready — double ${hotkeys.capture} to activate`)
-  } catch (err) {
-    console.error('[skuoty] keyboard hook failed:', err)
-  }
+  applyHotkeys(hotkeys)
+  console.log(`[skuoty] ready — ${hotkeys.capture} to capture, ${hotkeys.showWindow} to toggle`)
 })

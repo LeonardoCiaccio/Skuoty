@@ -205,12 +205,11 @@
           <!-- Capture key -->
           <div class="flex flex-col gap-1">
             <label class="text-xs text-[var(--text-muted)]">{{ t('captureKey') }}</label>
-            <p class="text-xs text-[var(--text-faint)] mb-1">{{ t('doublePress') }}: {{ settings.hotkeys.capture }}</p>
             <button
               @click="startRecording('capture')"
               :class="['field text-left w-full', recording === 'capture' ? 'border-[#6366f1] text-[var(--text-muted)] animate-pulse' : '']"
             >
-              {{ recording === 'capture' ? t('pressKeys') : `${settings.hotkeys.capture} + ${settings.hotkeys.capture}` }}
+              {{ recording === 'capture' ? t('pressKeys') : displayAccel(settings.hotkeys.capture) }}
             </button>
           </div>
 
@@ -221,7 +220,7 @@
               @click="startRecording('showWindow')"
               :class="['field text-left w-full', recording === 'showWindow' ? 'border-[#6366f1] text-[var(--text-muted)] animate-pulse' : '']"
             >
-              {{ recording === 'showWindow' ? t('pressKeys') : (settings.hotkeys.showWindow || '—') }}
+              {{ recording === 'showWindow' ? t('pressKeys') : (displayAccel(settings.hotkeys.showWindow) || '—') }}
             </button>
             <p class="text-xs text-[var(--text-faint)]">{{ t('escToClear') }}</p>
           </div>
@@ -435,6 +434,12 @@ async function doImport() {
 // ── Hotkey recorder ───────────────────────────────────────────────────────────
 const recording = ref<'capture' | 'showWindow' | null>(null)
 
+function displayAccel(raw: string): string {
+  if (!raw) return ''
+  if (raw.startsWith('2x:')) { const k = raw.slice(3); return `${k} + ${k}` }
+  return raw
+}
+
 function startRecording(field: 'capture' | 'showWindow') {
   recording.value = field
   window.addEventListener('keydown', onKeyDown, { capture: true })
@@ -448,11 +453,35 @@ const KEY_NAMES: Record<string, string> = {
   'PageUp': 'PageUp', 'PageDown': 'PageDown',
 }
 
+let firstPress = ''
+let firstPressTimer = 0
+
+function buildAccelerator(e: KeyboardEvent): string {
+  const parts: string[] = []
+  if (e.ctrlKey)  parts.push('Ctrl')
+  if (e.altKey)   parts.push('Alt')
+  if (e.shiftKey) parts.push('Shift')
+  const key = KEY_NAMES[e.key] ?? (e.key.length === 1 ? e.key.toUpperCase() : e.key)
+  parts.push(key)
+  return parts.join('+')
+}
+
+function commitAccelerator(accelerator: string) {
+  if (recording.value) {
+    settings.value.hotkeys[recording.value] = accelerator
+    hotkeyDirty.value = true
+  }
+  firstPress = ''
+  stopRecording()
+}
+
 function onKeyDown(e: KeyboardEvent) {
   e.preventDefault()
   e.stopPropagation()
 
   if (e.key === 'Escape') {
+    clearTimeout(firstPressTimer)
+    firstPress = ''
     if (recording.value === 'showWindow') settings.value.hotkeys.showWindow = ''
     stopRecording()
     return
@@ -460,21 +489,24 @@ function onKeyDown(e: KeyboardEvent) {
 
   if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return
 
-  const parts: string[] = []
-  if (e.ctrlKey)  parts.push('Ctrl')
-  if (e.altKey)   parts.push('Alt')
-  if (e.shiftKey) parts.push('Shift')
+  const accelerator = buildAccelerator(e)
 
-  const key = KEY_NAMES[e.key] ?? (e.key.length === 1 ? e.key.toUpperCase() : e.key)
-  parts.push(key)
-
-  const accelerator = parts.join('+')
-  if (recording.value) {
-    settings.value.hotkeys[recording.value] = accelerator
-    hotkeyDirty.value = true
+  if (!firstPress) {
+    // First press — wait to see if user presses same combo again
+    firstPress = accelerator
+    firstPressTimer = window.setTimeout(() => {
+      // No second press within 600ms → single press
+      commitAccelerator(firstPress)
+    }, 600)
+  } else if (accelerator === firstPress) {
+    // Second press of same combo → double press
+    clearTimeout(firstPressTimer)
+    commitAccelerator('2x:' + accelerator)
+  } else {
+    // Different combo on second press → use first press as single
+    clearTimeout(firstPressTimer)
+    commitAccelerator(firstPress)
   }
-
-  stopRecording()
 }
 
 function stopRecording() {
