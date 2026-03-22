@@ -11,6 +11,10 @@ export const IPC = {
   LANGUAGE_CHANGED:   'language:changed',
   EXPORT_FILE:        'backup:export',
   IMPORT_FILE:        'backup:import',
+  SESSION_LIST:       'sessions:list',
+  SESSION_READ:       'sessions:read',
+  SESSION_WRITE:      'sessions:write',
+  SESSION_DELETE:     'sessions:delete',
 } as const
 
 // ─── i18n ──────────────────────────────────────────────────────────────────────

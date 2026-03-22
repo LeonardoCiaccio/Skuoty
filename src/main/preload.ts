@@ -9,8 +9,12 @@ const IPC_SETTINGS_SET = 'settings:set'
 const IPC_RENDERER_READY = 'renderer:ready'
 const IPC_WINDOW_HIDE      = 'window:hide'
 const IPC_LANGUAGE_CHANGED = 'language:changed'
-const IPC_EXPORT_FILE = 'backup:export'
-const IPC_IMPORT_FILE = 'backup:import'
+const IPC_EXPORT_FILE    = 'backup:export'
+const IPC_IMPORT_FILE    = 'backup:import'
+const IPC_SESSION_LIST   = 'sessions:list'
+const IPC_SESSION_READ   = 'sessions:read'
+const IPC_SESSION_WRITE  = 'sessions:write'
+const IPC_SESSION_DELETE = 'sessions:delete'
 
 const { contextBridge, ipcRenderer } = require('electron') as typeof import('electron')
 
@@ -42,4 +46,10 @@ contextBridge.exposeInMainWorld('skuoty', {
   setLanguage:    (lang: string) => ipcRenderer.send(IPC_LANGUAGE_CHANGED, lang),
   exportToFile:   (json: string) => ipcRenderer.invoke(IPC_EXPORT_FILE, json),
   importFromFile: ()             => ipcRenderer.invoke(IPC_IMPORT_FILE),
+  sessions: {
+    list:   ()                         => ipcRenderer.invoke(IPC_SESSION_LIST),
+    read:   (id: string)               => ipcRenderer.invoke(IPC_SESSION_READ, id),
+    write:  (id: string, data: string) => ipcRenderer.invoke(IPC_SESSION_WRITE, id, data),
+    delete: (id: string)               => ipcRenderer.invoke(IPC_SESSION_DELETE, id),
+  },
 })

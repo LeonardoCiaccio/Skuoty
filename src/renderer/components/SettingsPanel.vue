@@ -194,14 +194,71 @@
         </div>
       </template>
 
+      <!-- ══ SESSIONS ══ -->
+      <template v-if="active === 'sessions'">
+        <h2 class="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">{{ t('sessions') }}</h2>
+
+        <div class="flex flex-col gap-4">
+          <!-- Current session -->
+          <div v-if="current" class="bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-2">
+            <p class="text-xs text-[var(--text-muted)] mb-1">{{ t('currentSession') }}</p>
+            <p class="text-xs font-semibold text-[var(--text-primary)]">{{ current.name }}</p>
+          </div>
+
+          <!-- Session list -->
+          <div class="flex flex-col gap-2">
+            <div
+              v-for="s in sessions"
+              :key="s.id"
+              class="flex items-center gap-2 bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-2"
+            >
+              <span class="text-xs text-[var(--text-primary)] flex-1 truncate font-medium">{{ s.name }}</span>
+              <span v-if="s.id === current?.id" class="text-xs text-[#6366f1] font-semibold shrink-0">✓</span>
+
+              <!-- Rename -->
+              <button
+                @click="openRenameModal(s.id, s.name)"
+                class="text-xs text-[var(--text-muted)] hover:text-[var(--text-second)] transition-colors px-1"
+                :title="t('renameSession')"
+              >✎</button>
+
+              <!-- Change password (only current session) -->
+              <button
+                v-if="s.id === current?.id"
+                @click="openChangePasswordModal(s.id)"
+                class="text-xs text-[var(--text-muted)] hover:text-[var(--text-second)] transition-colors px-1"
+                :title="t('sessionChangePassword')"
+              >🔑</button>
+
+              <!-- Delete (disabled for current session) -->
+              <button
+                @click="doDeleteSession(s.id)"
+                :disabled="s.id === current?.id"
+                class="text-xs text-[var(--text-muted)] hover:text-[var(--color-danger)] transition-colors px-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                :title="t('deleteSession')"
+              >✕</button>
+            </div>
+          </div>
+
+          <p v-if="sessionActionMsg" class="text-xs text-[var(--color-success)]">{{ sessionActionMsg }}</p>
+          <p v-if="sessionActionError" class="text-xs text-[var(--color-danger)]">{{ sessionActionError }}</p>
+
+          <!-- New session button -->
+          <button @click="openNewSessionModal" class="btn-primary text-xs px-3 py-1.5 self-start">
+            + {{ t('addSession') }}
+          </button>
+        </div>
+      </template>
+
       <!-- ══ BACKUP ══ -->
       <template v-if="active === 'backup'">
         <h2 class="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-3">Backup</h2>
 
         <div class="flex flex-col gap-4">
           <div>
-            <p class="text-xs text-[var(--text-muted)] mb-2">{{ t('exportDesc') }}</p>
-            <button @click="doExport" :disabled="exporting" class="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">{{ t('export') }}</button>
+            <p class="text-xs text-[var(--text-muted)] mb-1">{{ t('exportDesc') }}</p>
+            <p class="text-xs text-[var(--text-muted)] opacity-70 mb-2">{{ t('exportEncryptedDesc') }}</p>
+            <button @click="openExportModal" :disabled="exporting" class="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">{{ t('export') }}</button>
             <p v-if="exportDone" class="text-xs text-[var(--color-success)] mt-1">{{ t('exportedToFile') }}</p>
           </div>
 
@@ -274,13 +331,172 @@
       </div>
     </Transition>
   </Teleport>
+
+  <!-- Export password modal -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div
+        v-if="showExportModal"
+        class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+        @click.self="showExportModal = false"
+      >
+        <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[340px] shadow-2xl flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-[var(--text-primary)]">{{ t('export') }}</span>
+            <button @click="showExportModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+          </div>
+          <p class="text-xs text-[var(--text-muted)]">{{ t('exportEncryptedDesc') }}</p>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-[var(--text-muted)]">{{ t('exportPassword') }}</label>
+            <input v-model="exportPassword" type="password" class="field" autocomplete="new-password" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-[var(--text-muted)]">{{ t('confirmPassword') }}</label>
+            <input v-model="exportPasswordConfirm" type="password" class="field" autocomplete="new-password" />
+          </div>
+          <p v-if="exportModalError" class="text-xs text-[var(--color-danger)]">{{ exportModalError }}</p>
+          <div class="flex justify-end gap-2">
+            <button @click="showExportModal = false" class="btn-secondary text-xs px-3 py-1.5">{{ t('cancel') }}</button>
+            <button @click="doExport" :disabled="exporting" class="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">{{ t('export') }}</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
+  <!-- Import password modal -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div
+        v-if="showImportModal"
+        class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+        @click.self="showImportModal = false"
+      >
+        <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[340px] shadow-2xl flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-[var(--text-primary)]">{{ t('import') }}</span>
+            <button @click="showImportModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-[var(--text-muted)]">{{ t('exportPassword') }}</label>
+            <input v-model="importPassword" type="password" class="field" autocomplete="current-password" />
+          </div>
+          <p v-if="importModalError" class="text-xs text-[var(--color-danger)]">{{ importModalError }}</p>
+          <div class="flex justify-end gap-2">
+            <button @click="showImportModal = false" class="btn-secondary text-xs px-3 py-1.5">{{ t('cancel') }}</button>
+            <button @click="confirmImport" :disabled="importing" class="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">{{ t('import') }}</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
+  <!-- New session modal -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div
+        v-if="showNewSessionModal"
+        class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+        @click.self="showNewSessionModal = false"
+      >
+        <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[340px] shadow-2xl flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-[var(--text-primary)]">{{ t('addSession') }}</span>
+            <button @click="showNewSessionModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-[var(--text-muted)]">{{ t('sessionName') }}</label>
+            <input v-model="newSessionName" type="text" class="field" autocomplete="off" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-[var(--text-muted)]">{{ t('passwordLabel') }}</label>
+            <input v-model="newSessionPassword" type="password" class="field" autocomplete="new-password" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-[var(--text-muted)]">{{ t('confirmPassword') }}</label>
+            <input v-model="newSessionPasswordConfirm" type="password" class="field" autocomplete="new-password" />
+          </div>
+          <p v-if="newSessionError" class="text-xs text-[var(--color-danger)]">{{ newSessionError }}</p>
+          <div class="flex justify-end gap-2">
+            <button @click="showNewSessionModal = false" class="btn-secondary text-xs px-3 py-1.5">{{ t('cancel') }}</button>
+            <button @click="doCreateSession" :disabled="newSessionBusy" class="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">{{ t('createBtn') }}</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
+  <!-- Rename session modal -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div
+        v-if="showRenameModal"
+        class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+        @click.self="showRenameModal = false"
+      >
+        <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[340px] shadow-2xl flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-[var(--text-primary)]">{{ t('renameSession') }}</span>
+            <button @click="showRenameModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-[var(--text-muted)]">{{ t('newSessionName') }}</label>
+            <input v-model="renameValue" type="text" class="field" autocomplete="off" />
+          </div>
+          <p v-if="renameError" class="text-xs text-[var(--color-danger)]">{{ renameError }}</p>
+          <div class="flex justify-end gap-2">
+            <button @click="showRenameModal = false" class="btn-secondary text-xs px-3 py-1.5">{{ t('cancel') }}</button>
+            <button @click="doRename" :disabled="renameBusy" class="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">{{ t('save') }}</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
+  <!-- Change password modal -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div
+        v-if="showChangePwModal"
+        class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+        @click.self="showChangePwModal = false"
+      >
+        <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[340px] shadow-2xl flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-[var(--text-primary)]">{{ t('sessionChangePassword') }}</span>
+            <button @click="showChangePwModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-[var(--text-muted)]">{{ t('oldPassword') }}</label>
+            <input v-model="changePwOld" type="password" class="field" autocomplete="current-password" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-[var(--text-muted)]">{{ t('newPassword') }}</label>
+            <input v-model="changePwNew" type="password" class="field" autocomplete="new-password" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-xs text-[var(--text-muted)]">{{ t('confirmPassword') }}</label>
+            <input v-model="changePwConfirm" type="password" class="field" autocomplete="new-password" />
+          </div>
+          <p v-if="changePwError" class="text-xs text-[var(--color-danger)]">{{ changePwError }}</p>
+          <p v-if="changePwDone" class="text-xs text-[var(--color-success)]">{{ t('passwordChanged') }}</p>
+          <div class="flex justify-end gap-2">
+            <button @click="showChangePwModal = false" class="btn-secondary text-xs px-3 py-1.5">{{ t('cancel') }}</button>
+            <button @click="doChangePassword" :disabled="changePwBusy" class="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">{{ t('save') }}</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useSettings } from '../composables/useSettings'
+import { useSessions } from '../composables/useSessions'
 import { useI18n } from '../composables/useI18n'
 import { testProvider, fetchOllamaModels, AIError } from '../composables/useAI'
+import { encryptData, decryptData, isEncryptedBlob } from '../composables/useCrypto'
 import { getLabel, DEFAULT_SETTINGS } from '../../shared/types'
 import type { AIProvider, SkuotyPlugin } from '../../shared/types'
 
@@ -289,12 +505,14 @@ const appVersion = __APP_VERSION__
 defineEmits<{ close: [] }>()
 
 const { settings, exportSettings, importSettings } = useSettings()
+const { sessions, current, list: listSessions, create: createSession, rename, changePassword, deleteSession } = useSessions()
 const { t } = useI18n()
 
 const sections = [
   { id: 'general',   label: { en: 'General',   it: 'Generale',   es: 'General',   fr: 'Général',    de: 'Allgemein'  } },
   { id: 'ai',        label: { en: 'AI',         it: 'AI',         es: 'IA',         fr: 'IA',         de: 'KI'         } },
   { id: 'plugins',   label: { en: 'Plugins',    it: 'Plugin',     es: 'Plugins',    fr: 'Plugins',    de: 'Plugins'    } },
+  { id: 'sessions',  label: { en: 'Sessions',   it: 'Sessioni',   es: 'Sesiones',   fr: 'Sessions',   de: 'Sitzungen'  } },
   { id: 'backup',    label: { en: 'Backup',     it: 'Backup',     es: 'Copia',      fr: 'Sauvegarde', de: 'Sicherung'  } },
   { id: 'info',      label: { en: 'Info',       it: 'Info',       es: 'Info',       fr: 'Info',       de: 'Info'       } },
 ]
@@ -406,16 +624,50 @@ const exportDone  = ref(false)
 const exporting   = ref(false)
 const importing   = ref(false)
 
+// Export modal
+const showExportModal         = ref(false)
+const exportPassword          = ref('')
+const exportPasswordConfirm   = ref('')
+const exportModalError        = ref('')
+
+function openExportModal() {
+  exportPassword.value = ''
+  exportPasswordConfirm.value = ''
+  exportModalError.value = ''
+  showExportModal.value = true
+}
+
 async function doExport() {
+  exportModalError.value = ''
+  if (exportPassword.value.length < 6) {
+    exportModalError.value = t.value('passwordTooShort')
+    return
+  }
+  if (exportPassword.value !== exportPasswordConfirm.value) {
+    exportModalError.value = t.value('passwordMismatch')
+    return
+  }
   exporting.value = true
-  exportDone.value = false
-  const saved = await window.skuoty.exportToFile(exportSettings())
-  exporting.value = false
-  if (saved) {
-    exportDone.value = true
-    setTimeout(() => { exportDone.value = false }, 3000)
+  showExportModal.value = false
+  try {
+    const encrypted = await encryptData(exportSettings(), exportPassword.value)
+    const saved = await window.skuoty.exportToFile(encrypted)
+    if (saved) {
+      exportDone.value = true
+      setTimeout(() => { exportDone.value = false }, 3000)
+    }
+  } finally {
+    exporting.value = false
+    exportPassword.value = ''
+    exportPasswordConfirm.value = ''
   }
 }
+
+// Import modal
+const showImportModal  = ref(false)
+const importPassword   = ref('')
+const importModalError = ref('')
+let   pendingImportJson: string | null = null
 
 async function doImport() {
   importing.value = true
@@ -424,10 +676,167 @@ async function doImport() {
   const json = await window.skuoty.importFromFile()
   importing.value = false
   if (!json) return
-  const err = importSettings(json)
-  if (err) { importError.value = err; return }
-  importDone.value = true
-  setTimeout(() => { importDone.value = false }, 3000)
+
+  // Try plain JSON first
+  try {
+    const parsed = JSON.parse(json)
+    if (!isEncryptedBlob(parsed)) {
+      // Plain JSON — import directly
+      const err = importSettings(json)
+      if (err) { importError.value = err; return }
+      importDone.value = true
+      setTimeout(() => { importDone.value = false }, 3000)
+      return
+    }
+  } catch {
+    importError.value = 'Invalid file.'
+    return
+  }
+
+  // Encrypted blob — ask for password
+  pendingImportJson = json
+  importPassword.value = ''
+  importModalError.value = ''
+  showImportModal.value = true
+}
+
+async function confirmImport() {
+  if (!pendingImportJson) return
+  importModalError.value = ''
+  importing.value = true
+  try {
+    const plain = await decryptData(pendingImportJson, importPassword.value)
+    const err = importSettings(plain)
+    if (err) { importModalError.value = err; return }
+    showImportModal.value = false
+    importDone.value = true
+    setTimeout(() => { importDone.value = false }, 3000)
+  } catch {
+    importModalError.value = t.value('wrongPassword')
+  } finally {
+    importing.value = false
+  }
+}
+
+// ── Sessions management ───────────────────────────────────────────────────────
+const sessionActionMsg   = ref('')
+const sessionActionError = ref('')
+
+function flashSessionMsg(msg: string) {
+  sessionActionMsg.value = msg
+  setTimeout(() => { sessionActionMsg.value = '' }, 2500)
+}
+
+// New session modal
+const showNewSessionModal          = ref(false)
+const newSessionName               = ref('')
+const newSessionPassword           = ref('')
+const newSessionPasswordConfirm    = ref('')
+const newSessionError              = ref('')
+const newSessionBusy               = ref(false)
+
+function openNewSessionModal() {
+  newSessionName.value = ''
+  newSessionPassword.value = ''
+  newSessionPasswordConfirm.value = ''
+  newSessionError.value = ''
+  showNewSessionModal.value = true
+}
+
+async function doCreateSession() {
+  newSessionError.value = ''
+  if (!newSessionName.value.trim()) { newSessionError.value = t.value('sessionNameRequired'); return }
+  if (newSessionPassword.value.length < 6) { newSessionError.value = t.value('passwordTooShort'); return }
+  if (newSessionPassword.value !== newSessionPasswordConfirm.value) { newSessionError.value = t.value('passwordMismatch'); return }
+  newSessionBusy.value = true
+  try {
+    await createSession(newSessionName.value.trim(), newSessionPassword.value, settings.value)
+    showNewSessionModal.value = false
+    flashSessionMsg(t.value('applied'))
+  } catch (e) {
+    newSessionError.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    newSessionBusy.value = false
+  }
+}
+
+// Rename modal
+const showRenameModal  = ref(false)
+const renameTargetId   = ref('')
+const renameValue      = ref('')
+const renameError      = ref('')
+const renameBusy       = ref(false)
+
+function openRenameModal(id: string, currentName: string) {
+  renameTargetId.value = id
+  renameValue.value = currentName
+  renameError.value = ''
+  showRenameModal.value = true
+}
+
+async function doRename() {
+  if (!renameValue.value.trim()) { renameError.value = t.value('sessionNameRequired'); return }
+  renameBusy.value = true
+  try {
+    await rename(renameTargetId.value, renameValue.value.trim())
+    showRenameModal.value = false
+    flashSessionMsg(t.value('sessionRenamed'))
+  } catch (e) {
+    renameError.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    renameBusy.value = false
+  }
+}
+
+// Delete session
+async function doDeleteSession(id: string) {
+  sessionActionError.value = ''
+  try {
+    await deleteSession(id)
+    flashSessionMsg(t.value('sessionDeleted'))
+  } catch (e) {
+    sessionActionError.value = e instanceof Error ? e.message : String(e)
+  }
+}
+
+// Change password modal
+const showChangePwModal  = ref(false)
+const changePwTargetId   = ref('')
+const changePwOld        = ref('')
+const changePwNew        = ref('')
+const changePwConfirm    = ref('')
+const changePwError      = ref('')
+const changePwDone       = ref(false)
+const changePwBusy       = ref(false)
+
+function openChangePasswordModal(id: string) {
+  changePwTargetId.value = id
+  changePwOld.value = ''
+  changePwNew.value = ''
+  changePwConfirm.value = ''
+  changePwError.value = ''
+  changePwDone.value = false
+  showChangePwModal.value = true
+}
+
+async function doChangePassword() {
+  changePwError.value = ''
+  changePwDone.value = false
+  if (changePwNew.value.length < 6) { changePwError.value = t.value('passwordTooShort'); return }
+  if (changePwNew.value !== changePwConfirm.value) { changePwError.value = t.value('passwordMismatch'); return }
+  changePwBusy.value = true
+  try {
+    await changePassword(changePwTargetId.value, changePwOld.value, changePwNew.value, settings.value)
+    changePwDone.value = true
+    changePwOld.value = ''
+    changePwNew.value = ''
+    changePwConfirm.value = ''
+    setTimeout(() => { showChangePwModal.value = false; changePwDone.value = false }, 1500)
+  } catch {
+    changePwError.value = t.value('wrongPassword')
+  } finally {
+    changePwBusy.value = false
+  }
 }
 
 // ── Info / factory reset / update ─────────────────────────────────────────────
@@ -462,6 +871,9 @@ function validatePlugin(raw: string): SkuotyPlugin | null {
     return { name: p.name, label: p.label as SkuotyPlugin['label'], options: p.options as SkuotyPlugin['options'], prompt: p.prompt, enabled: p.enabled !== false }
   } catch { return null }
 }
+
+// Load sessions list when sessions tab is activated
+watch(active, (a) => { if (a === 'sessions') listSessions() })
 </script>
 
 <style scoped>

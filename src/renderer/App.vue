@@ -1,6 +1,9 @@
 <template>
   <div class="flex flex-col h-screen bg-[var(--bg-base)] text-[var(--text-primary)] select-none overflow-hidden rounded-lg border border-[var(--border)]">
 
+    <!-- Session gate: shown until user unlocks a session -->
+    <SessionGate v-if="!sessionReady" @unlocked="onSessionUnlocked" />
+
     <!-- Title bar (draggable) -->
     <div class="flex items-center justify-between px-3 py-2 bg-[var(--bg-deep)] border-b border-[var(--border)]" style="-webkit-app-region: drag">
       <span class="text-xs font-semibold tracking-widest text-[var(--text-muted)] uppercase">Skuoty <span class="font-normal opacity-50">v{{ appVersion }}</span></span>
@@ -77,11 +80,17 @@ import TextPreview    from './components/TextPreview.vue'
 import ElaboratedText from './components/ElaboratedText.vue'
 import PluginPanel    from './components/PluginPanel.vue'
 import SettingsPanel  from './components/SettingsPanel.vue'
-import { useSettings } from './composables/useSettings'
+import SessionGate    from './components/SessionGate.vue'
+import { useSettings }  from './composables/useSettings'
+import { useSessions }  from './composables/useSessions'
+import type { AppSettings } from '../shared/types'
 
-const { settings, init } = useSettings()
+const { settings, init, load } = useSettings()
+const { save: saveSession }    = useSessions()
 
 const appVersion = __APP_VERSION__
+
+const sessionReady = ref(false)
 
 const aiProviderOptions = computed(() => [
   { id: 'ollama',     name: 'Ollama',      model: settings.value.providers.ollama.model     },
@@ -123,10 +132,30 @@ watch(() => settings.value.language, (lang) => {
   window.skuoty.setLanguage(lang)
 })
 
+// Keep electron-store config.json in sync for splash screen theming
+watch(settings, (s) => {
+  window.skuoty.setSettings(s)
+}, { deep: true })
+
+// Debounced save of full settings to the encrypted session file
+let saveTimer: ReturnType<typeof setTimeout> | null = null
+watch(settings, (s) => {
+  if (!sessionReady.value) return
+  if (saveTimer) clearTimeout(saveTimer)
+  saveTimer = setTimeout(() => {
+    saveSession(s)
+  }, 500)
+}, { deep: true })
+
 const selectionText  = ref('')
 const elaboratedText = ref('')
 const showSettings   = ref(false)
 const hasTarget      = ref(false)
+
+function onSessionUnlocked(loadedSettings: AppSettings) {
+  load(loadedSettings)
+  sessionReady.value = true
+}
 
 onMounted(() => {
   init()

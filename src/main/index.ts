@@ -1,11 +1,18 @@
 import { app, BrowserWindow, ipcMain, clipboard, screen, Tray, Menu, nativeImage, dialog } from 'electron'
 import { spawn, spawnSync } from 'child_process'
-import { readFileSync, writeFileSync } from 'fs'
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, unlinkSync, existsSync } from 'fs'
 import { tmpdir } from 'os'
 import path from 'path'
 import { setupStore } from './store'
 import { setupHotkey } from './hotkey'
 import { IPC } from '../shared/types'
+
+let SESSIONS_DIR = ''
+
+function ensureSessionsDir() {
+  if (!SESSIONS_DIR) SESSIONS_DIR = path.join(app.getPath('userData'), 'sessions')
+  if (!existsSync(SESSIONS_DIR)) mkdirSync(SESSIONS_DIR, { recursive: true })
+}
 
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
@@ -254,6 +261,38 @@ function setupIPC() {
     if (!canceled && filePath) writeFileSync(filePath, json, 'utf-8')
     mainWindow?.show()
     return !canceled && !!filePath
+  })
+
+  ipcMain.handle(IPC.SESSION_LIST, () => {
+    ensureSessionsDir()
+    try {
+      return readdirSync(SESSIONS_DIR)
+        .filter(f => f.endsWith('.skuoty'))
+        .map(f => {
+          const id  = f.replace('.skuoty', '')
+          const raw = readFileSync(path.join(SESSIONS_DIR, f), 'utf-8')
+          const { name, created, modified } = JSON.parse(raw)
+          return { id, name, created, modified }
+        })
+    } catch { return [] }
+  })
+
+  ipcMain.handle(IPC.SESSION_READ, (_e, id: string) => {
+    ensureSessionsDir()
+    const p = path.join(SESSIONS_DIR, `${id}.skuoty`)
+    if (!existsSync(p)) return null
+    return readFileSync(p, 'utf-8')
+  })
+
+  ipcMain.handle(IPC.SESSION_WRITE, (_e, id: string, data: string) => {
+    ensureSessionsDir()
+    writeFileSync(path.join(SESSIONS_DIR, `${id}.skuoty`), data, 'utf-8')
+  })
+
+  ipcMain.handle(IPC.SESSION_DELETE, (_e, id: string) => {
+    ensureSessionsDir()
+    const p = path.join(SESSIONS_DIR, `${id}.skuoty`)
+    if (existsSync(p)) unlinkSync(p)
   })
 
   ipcMain.handle(IPC.IMPORT_FILE, async () => {

@@ -1,4 +1,4 @@
-import { ref, watchEffect } from 'vue'
+import { ref } from 'vue'
 import { DEFAULT_SETTINGS } from '../../shared/types'
 import type { AppSettings } from '../../shared/types'
 
@@ -16,21 +16,26 @@ function merge(saved: Partial<AppSettings>): AppSettings {
 const settings = ref<AppSettings>(structuredClone(DEFAULT_SETTINGS))
 const ready = ref(false)
 
-// Save to electron-store on every change, but only after init() has loaded
-// the authoritative data (avoids overwriting saved settings with defaults)
-watchEffect(() => {
-  if (!ready.value) return
-  window.skuoty.setSettings(JSON.parse(JSON.stringify(settings.value)) as AppSettings)
-})
-
 export function useSettings() {
-  /** Call once from App.vue onMounted. Loads settings from electron-store. */
+  /**
+   * Call once from App.vue onMounted.
+   * Loads lang/theme from electron-store so the UI is themed before session unlock.
+   */
   async function init() {
     if (ready.value) return
     try {
       const saved = await window.skuoty.getSettings() as Partial<AppSettings> | null
       if (saved) settings.value = merge(saved)
     } catch { /* keep defaults */ }
+    ready.value = true
+  }
+
+  /**
+   * Called after a session is successfully unlocked.
+   * Overrides the current settings with the decrypted session data.
+   */
+  function load(s: AppSettings) {
+    settings.value = merge(s)
     ready.value = true
   }
 
@@ -47,5 +52,5 @@ export function useSettings() {
     }
   }
 
-  return { settings, init, exportSettings, importSettings }
+  return { settings, init, load, exportSettings, importSettings }
 }
