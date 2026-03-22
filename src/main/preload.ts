@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
+export {}
 
 // IPC channel strings inlined — avoids require() of local files in preload context
 const IPC_CLIPBOARD_CAPTURED = 'clipboard:captured'
@@ -20,6 +21,8 @@ const { contextBridge, ipcRenderer } = require('electron') as typeof import('ele
 
 let pendingText: string | null = null
 let captureCallback: ((text: string) => void) | null = null
+let sessionReadyCallback: ((json: string) => void) | null = null
+let pendingSession: string | null = null
 
 ipcRenderer.on(IPC_CLIPBOARD_CAPTURED, (_event, text: string) => {
   if (captureCallback) {
@@ -29,7 +32,22 @@ ipcRenderer.on(IPC_CLIPBOARD_CAPTURED, (_event, text: string) => {
   }
 })
 
+ipcRenderer.on('session:ready', (_event, json: string) => {
+  if (sessionReadyCallback) {
+    sessionReadyCallback(json)
+  } else {
+    pendingSession = json
+  }
+})
+
 contextBridge.exposeInMainWorld('skuoty', {
+  onSessionReady: (cb: (json: string) => void) => {
+    sessionReadyCallback = cb
+    if (pendingSession !== null) {
+      cb(pendingSession)
+      pendingSession = null
+    }
+  },
   onClipboardCaptured: (cb: (text: string) => void) => {
     captureCallback = cb
     if (pendingText !== null) {

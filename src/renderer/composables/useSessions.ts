@@ -90,28 +90,36 @@ export function useSessions() {
     await list()
   }
 
-  async function changePassword(id: string, oldPw: string, newPw: string, settings: AppSettings): Promise<void> {
+  async function changePassword(id: string, oldPw: string, newPw: string): Promise<void> {
     const raw = await window.skuoty.sessions.read(id) as string | null
     if (!raw) throw new Error('not_found')
-    const file   = JSON.parse(raw) as SessionFile
-    const oldKey = await pbkdf2Raw(oldPw, unb64(file.salt))
-    await decryptSettings(file.iv, file.enc, oldKey) // verify old password - throws if wrong
-    const newSalt = rnd16()
-    const newKey  = await pbkdf2Raw(newPw, newSalt)
-    const { iv, data: enc } = await encryptSettings(settings, newKey)
+    const file     = JSON.parse(raw) as SessionFile
+    const oldKey   = await pbkdf2Raw(oldPw, unb64(file.salt))
+    const existing = await decryptSettings(file.iv, file.enc, oldKey) // verify + decrypt actual data
+    const newSalt  = rnd16()
+    const newKey   = await pbkdf2Raw(newPw, newSalt)
+    const { iv, data: enc } = await encryptSettings(existing, newKey)
     await window.skuoty.sessions.write(id, JSON.stringify({ ...file, salt: b64(newSalt), iv, enc }))
     if (_current.value?.id === id) _keyBytes = newKey
   }
 
   async function deleteSession(id: string): Promise<void> {
     await window.skuoty.sessions.delete(id)
-    await list()
+    if (_current.value?.id === id) logout()
+    else await list()
+  }
+
+  function logout(): void {
+    _keyBytes       = null
+    _current.value  = null
+    _unlocked.value = false
+    _sessions.value = []
   }
 
   return {
     sessions: _sessions,
     current:  _current,
     unlocked: _unlocked,
-    list, create, open, save, rename, changePassword, deleteSession,
+    list, create, open, save, rename, changePassword, deleteSession, logout,
   }
 }

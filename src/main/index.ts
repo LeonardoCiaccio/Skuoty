@@ -14,7 +14,8 @@ function ensureSessionsDir() {
   if (!existsSync(SESSIONS_DIR)) mkdirSync(SESSIONS_DIR, { recursive: true })
 }
 
-let mainWindow: BrowserWindow | null = null
+let mainWindow:   BrowserWindow | null = null
+let splashWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 let dialogOpen = false
 let rendererReady = false
@@ -132,10 +133,6 @@ function simulatePaste() {
 
 // ─── Tray ─────────────────────────────────────────────────────────────────────
 
-app.commandLine.appendSwitch('disable-gpu-sandbox')
-app.commandLine.appendSwitch('disable-gpu-disk-cache')
-app.commandLine.appendSwitch('disk-cache-size', '0')
-
 function buildTrayMenu() {
   const labels = TRAY_LABELS[currentLang] ?? TRAY_LABELS['en']
   return Menu.buildFromTemplate([
@@ -163,17 +160,18 @@ function createTray() {
 // ─── Splash ───────────────────────────────────────────────────────────────────
 
 function createSplash(lang: string, theme: string) {
-  const splash = new BrowserWindow({
-    width: 400, height: 260,
+  const preload = path.join(__dirname, 'splash-preload.js')
+  splashWindow = new BrowserWindow({
+    width: 360, height: 460,
     frame: false, resizable: false,
     alwaysOnTop: true, center: true, skipTaskbar: true,
-    webPreferences: { contextIsolation: true, nodeIntegration: false },
+    webPreferences: { contextIsolation: true, nodeIntegration: false, preload },
   })
 
   if (isDev) {
-    splash.loadURL(`http://localhost:5173/splash.html?lang=${lang}&theme=${theme}`)
+    splashWindow.loadURL(`http://localhost:5173/splash.html?lang=${lang}&theme=${theme}`)
   } else {
-    splash.loadFile(path.join(__dirname, '../../renderer/splash.html'), { query: { lang, theme } })
+    splashWindow.loadFile(path.join(__dirname, '../../renderer/splash.html'), { query: { lang, theme } })
   }
 }
 
@@ -230,6 +228,17 @@ async function showWindow(text: string) {
 // ─── IPC ──────────────────────────────────────────────────────────────────────
 
 function setupIPC() {
+  // Session unlocked from splash → forward to main window, show it, close splash
+  ipcMain.on('session:unlocked', (_e, settingsJSON: string) => {
+    if (mainWindow) {
+      mainWindow.webContents.send('session:ready', settingsJSON)
+      mainWindow.show()
+      mainWindow.focus()
+    }
+    splashWindow?.close()
+    splashWindow = null
+  })
+
   ipcMain.on(IPC.RENDERER_READY, () => { rendererReady = true })
   ipcMain.on(IPC.COPY_TO_CLIPBOARD, (_e, text: string) => { clipboard.writeText(text) })
 
@@ -331,11 +340,11 @@ app.whenReady().then(() => {
     startDaemon()   // compiles Win32 type once (~300 ms), then stays ready
   }
 
-  // Read lang/theme before creating windows so the splash is already themed
-  const saved = setupStore().get('settings') as { language?: string; theme?: string } | null
-  const splashLang  = saved?.language ?? 'en'
-  const splashTheme = saved?.theme    ?? 'dark'
-  createSplash(splashLang, splashTheme)
+  // Splash uses dark theme; language from system locale if available
+  const sysLang = app.getLocale().split('-')[0]
+  const SUPPORTED = ['en', 'it', 'es', 'fr', 'de']
+  const splashLang = SUPPORTED.includes(sysLang) ? sysLang : 'en'
+  createSplash(splashLang, 'dark')
 
   createWindow()
   createTray()

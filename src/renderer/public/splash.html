@@ -14,8 +14,10 @@
       --text-primary: #f0f0f0;
       --text-second:  #a0a0a0;
       --text-muted:   #6b6b6b;
+      --text-faint:   #4a4a4a;
       --accent:       #6366f1;
       --accent-hover: #4f46e5;
+      --danger:       #f87171;
     }
 
     [data-theme="light"] {
@@ -26,6 +28,8 @@
       --text-primary: #1a1a1a;
       --text-second:  #555555;
       --text-muted:   #666666;
+      --text-faint:   #aaaaaa;
+      --danger:       #991b1b;
     }
 
     html, body {
@@ -43,185 +47,352 @@
       align-items: center;
       justify-content: center;
       gap: 0;
-      padding: 0;
+      padding: 32px 36px;
       border: 1px solid var(--border);
-    }
-
-    .inner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 14px;
-      padding: 32px 36px 28px;
-      width: 100%;
-      flex: 1;
+      border-radius: 10px;
     }
 
     .logo {
-      font-size: 26px;
+      font-size: 22px;
       font-weight: 700;
       letter-spacing: 0.22em;
       color: var(--accent);
+      margin-bottom: 4px;
     }
 
     .tagline {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--text-muted);
       letter-spacing: 0.12em;
       text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .form { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+
+    label {
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      display: block;
+    }
+
+    select, input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 8px 10px;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-family: inherit;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    select:focus, input:focus {
+      border-color: var(--accent);
+    }
+
+    select option { background: var(--bg-deep); color: var(--text-primary); }
+
+    .btn {
+      width: 100%;
+      padding: 9px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-top: 2px;
+    }
+    .btn:hover { background: var(--accent-hover); }
+    .btn:disabled { opacity: 0.5; cursor: default; }
+
+    .error {
+      font-size: 11px;
+      color: var(--danger);
+      text-align: center;
+      min-height: 16px;
     }
 
     .divider {
       width: 100%;
       height: 1px;
       background: var(--border);
-      margin: 2px 0;
+      margin: 8px 0;
     }
 
-    .tray-msg {
-      font-size: 12px;
-      color: var(--text-second);
-      text-align: center;
-      line-height: 1.7;
-      white-space: pre-line;
-    }
-
-    .footer {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 36px 20px;
-      border-top: 1px solid var(--border);
-      background: var(--bg-deep);
-    }
-
-    .countdown {
+    .new-link {
       font-size: 11px;
       color: var(--text-muted);
-      min-width: 20px;
-      text-align: right;
-      flex-shrink: 0;
-    }
-
-    .progress-wrap {
-      flex: 1;
-      height: 2px;
-      background: var(--bg-element);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-
-    .progress-bar {
-      height: 100%;
-      background: var(--accent);
-      border-radius: 2px;
-      width: 100%;
-      transition: width 1s linear;
-    }
-
-    .close-btn {
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      padding: 5px 14px;
-      font-size: 11px;
-      font-weight: 500;
+      text-align: center;
       cursor: pointer;
-      transition: background 0.15s;
-      flex-shrink: 0;
+      text-decoration: underline;
     }
+    .new-link:hover { color: var(--text-second); }
 
-    .close-btn:hover { background: var(--accent-hover); }
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
-  <div class="inner">
-    <div class="logo">SKUOTY</div>
-    <div class="tagline">Select &middot; Elaborate &middot; Done</div>
+  <div class="logo">SKUOTY</div>
+  <div class="tagline">Select &middot; Elaborate &middot; Done</div>
+
+  <!-- UNLOCK FORM (session exists) -->
+  <div class="form" id="form-unlock" style="display:none">
+    <div>
+      <label id="lbl-session"></label>
+      <select id="session-select"></select>
+    </div>
+    <div>
+      <label id="lbl-password"></label>
+      <input type="password" id="unlock-pw" autocomplete="current-password" />
+    </div>
+    <div class="error" id="unlock-error"></div>
+    <button class="btn" id="unlock-btn" onclick="doUnlock()"></button>
     <div class="divider"></div>
-    <p class="tray-msg" id="msg"></p>
+    <span class="new-link" id="lbl-new-session" onclick="showCreate()"></span>
   </div>
 
-  <div class="footer">
-    <span class="countdown" id="countdown"></span>
-    <div class="progress-wrap">
-      <div class="progress-bar" id="bar"></div>
+  <!-- CREATE FORM (no sessions or user clicked "new") -->
+  <div class="form" id="form-create" style="display:none">
+    <div>
+      <label id="lbl-name"></label>
+      <input type="text" id="create-name" autocomplete="off" />
     </div>
-    <button class="close-btn" id="btn" onclick="closeSplash()"></button>
+    <div>
+      <label id="lbl-password-c"></label>
+      <input type="password" id="create-pw" autocomplete="new-password" />
+    </div>
+    <div>
+      <label id="lbl-confirm"></label>
+      <input type="password" id="create-pw2" autocomplete="new-password" />
+    </div>
+    <div class="error" id="create-error"></div>
+    <button class="btn" id="create-btn" onclick="doCreate()"></button>
+    <div class="divider" id="create-back-divider"></div>
+    <span class="new-link" id="lbl-back" onclick="showUnlock()" style="display:none"></span>
   </div>
 
   <script>
-    const DURATION = 5
-
+    // ─── i18n ──────────────────────────────────────────────────────────────────
     const STRINGS = {
-      en: {
-        tray:  'Skuoty is now running in the system tray.\nClick the icon anytime to open it.',
-        close: 'Got it',
-        sec:   's',
-      },
-      it: {
-        tray:  "Skuoty gira in background, vicino all'orologio.\nClicca sull'icona per aprirlo quando vuoi.",
-        close: 'Ok',
-        sec:   's',
-      },
-      es: {
-        tray:  'Skuoty está en la bandeja del sistema.\nHaz clic en el icono para abrirlo cuando quieras.',
-        close: 'Entendido',
-        sec:   's',
-      },
-      fr: {
-        tray:  "Skuoty s'exécute dans la barre système.\nCliquez sur l'icône pour l'ouvrir quand vous voulez.",
-        close: 'Compris',
-        sec:   's',
-      },
-      de: {
-        tray:  'Skuoty läuft im Systembereich.\nKlicke auf das Symbol, um es zu öffnen.',
-        close: 'Verstanden',
-        sec:   's',
-      },
+      en: { session: 'Session', password: 'Password', unlock: 'Unlock', newSession: '+ Create new session',
+            name: 'Session name', confirm: 'Confirm password', create: 'Create session',
+            back: 'Back to sessions', wrongPw: 'Wrong password', shortPw: 'Password too short (min 6)',
+            mismatch: 'Passwords do not match', working: 'Working…', noSessions: 'No sessions found' },
+      it: { session: 'Sessione', password: 'Password', unlock: 'Accedi', newSession: '+ Nuova sessione',
+            name: 'Nome sessione', confirm: 'Conferma password', create: 'Crea sessione',
+            back: 'Torna alle sessioni', wrongPw: 'Password errata', shortPw: 'Password troppo corta (min 6)',
+            mismatch: 'Le password non coincidono', working: 'Caricamento…', noSessions: 'Nessuna sessione trovata' },
+      es: { session: 'Sesión', password: 'Contraseña', unlock: 'Entrar', newSession: '+ Nueva sesión',
+            name: 'Nombre de sesión', confirm: 'Confirmar contraseña', create: 'Crear sesión',
+            back: 'Volver a sesiones', wrongPw: 'Contraseña incorrecta', shortPw: 'Contraseña muy corta (mín 6)',
+            mismatch: 'Las contraseñas no coinciden', working: 'Cargando…', noSessions: 'No hay sesiones' },
+      fr: { session: 'Session', password: 'Mot de passe', unlock: 'Déverrouiller', newSession: '+ Nouvelle session',
+            name: 'Nom de session', confirm: 'Confirmer le mot de passe', create: 'Créer la session',
+            back: 'Retour aux sessions', wrongPw: 'Mot de passe incorrect', shortPw: 'Mot de passe trop court (min 6)',
+            mismatch: 'Les mots de passe ne correspondent pas', working: 'Chargement…', noSessions: 'Aucune session' },
+      de: { session: 'Sitzung', password: 'Passwort', unlock: 'Entsperren', newSession: '+ Neue Sitzung',
+            name: 'Sitzungsname', confirm: 'Passwort bestätigen', create: 'Sitzung erstellen',
+            back: 'Zurück zu Sitzungen', wrongPw: 'Falsches Passwort', shortPw: 'Passwort zu kurz (min 6)',
+            mismatch: 'Passwörter stimmen nicht überein', working: 'Lädt…', noSessions: 'Keine Sitzungen' },
     }
 
     const params = new URLSearchParams(window.location.search)
     const lang   = params.get('lang')  || 'en'
     const theme  = params.get('theme') || 'dark'
+    const s      = STRINGS[lang] || STRINGS['en']
 
     document.documentElement.setAttribute('data-theme', theme)
 
-    const s = STRINGS[lang] || STRINGS['en']
-    document.getElementById('msg').textContent  = s.tray
-    document.getElementById('btn').textContent  = s.close
+    // ─── Crypto helpers (Web Crypto API — no external deps) ────────────────────
+    const ITERATIONS = 100000
 
-    let remaining = DURATION
-    const countdownEl = document.getElementById('countdown')
-    const barEl       = document.getElementById('bar')
-
-    function update() {
-      countdownEl.textContent  = remaining + s.sec
-      barEl.style.width        = (remaining / DURATION * 100) + '%'
+    function b64(bytes) {
+      return btoa(String.fromCharCode(...bytes))
+    }
+    function unb64(str) {
+      return new Uint8Array(atob(str).split('').map(c => c.charCodeAt(0)))
+    }
+    function rnd16() {
+      return crypto.getRandomValues(new Uint8Array(16))
     }
 
-    update()
-
-    let paused = false
-    let timer = setInterval(tick, 1000)
-
-    function tick() {
-      if (paused) return
-      remaining--
-      update()
-      if (remaining <= 0) { clearInterval(timer); window.close() }
+    async function deriveKey(password, salt) {
+      const raw = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits'])
+      const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: ITERATIONS, hash: 'SHA-256' }, raw, 256)
+      return new Uint8Array(bits)
     }
 
-    document.body.addEventListener('mouseenter', () => { paused = true })
-    document.body.addEventListener('mouseleave', () => { paused = false })
-
-    function closeSplash() {
-      clearInterval(timer)
-      window.close()
+    async function aesDecrypt(ivB64, encB64, keyBytes) {
+      const key = await crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['decrypt'])
+      const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(ivB64) }, key, unb64(encB64))
+      return new TextDecoder().decode(plain)
     }
+
+    async function aesEncrypt(plaintext, keyBytes) {
+      const key = await crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['encrypt'])
+      const iv  = rnd16()
+      const enc = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(plaintext))
+      return { iv: b64(iv), data: b64(new Uint8Array(enc)) }
+    }
+
+    // ─── State ─────────────────────────────────────────────────────────────────
+    let sessions = []
+    let hasSessions = false
+
+    // ─── UI helpers ────────────────────────────────────────────────────────────
+    function showUnlock() {
+      document.getElementById('form-create').style.display = 'none'
+      document.getElementById('form-unlock').style.display = ''
+      document.getElementById('unlock-pw').value = ''
+      document.getElementById('unlock-error').textContent = ''
+      document.getElementById('unlock-pw').focus()
+    }
+
+    function showCreate() {
+      document.getElementById('form-unlock').style.display = 'none'
+      document.getElementById('form-create').style.display = ''
+      document.getElementById('create-name').value = ''
+      document.getElementById('create-pw').value  = ''
+      document.getElementById('create-pw2').value = ''
+      document.getElementById('create-error').textContent = ''
+      document.getElementById('create-name').focus()
+      // show back link only if there are existing sessions
+      const backEl = document.getElementById('lbl-back')
+      const backDivider = document.getElementById('create-back-divider')
+      backEl.style.display = hasSessions ? '' : 'none'
+      backDivider.style.display = hasSessions ? '' : 'none'
+    }
+
+    function setWorking(busy) {
+      document.getElementById('unlock-btn').disabled = busy
+      document.getElementById('create-btn').disabled = busy
+      if (busy) {
+        document.getElementById('unlock-btn').innerHTML = '<span class="spinner"></span>' + s.working
+        document.getElementById('create-btn').innerHTML = '<span class="spinner"></span>' + s.working
+      } else {
+        document.getElementById('unlock-btn').textContent = s.unlock
+        document.getElementById('create-btn').textContent = s.create
+      }
+    }
+
+    // ─── Init ──────────────────────────────────────────────────────────────────
+    async function init() {
+      // labels
+      document.getElementById('lbl-session').textContent    = s.session
+      document.getElementById('lbl-password').textContent   = s.password
+      document.getElementById('unlock-btn').textContent     = s.unlock
+      document.getElementById('lbl-new-session').textContent = s.newSession
+      document.getElementById('lbl-name').textContent       = s.name
+      document.getElementById('lbl-password-c').textContent = s.password
+      document.getElementById('lbl-confirm').textContent    = s.confirm
+      document.getElementById('create-btn').textContent     = s.create
+      document.getElementById('lbl-back').textContent       = s.back
+
+      sessions = await window.splash.listSessions()
+      hasSessions = sessions.length > 0
+
+      if (hasSessions) {
+        const sel = document.getElementById('session-select')
+        sessions.forEach(sess => {
+          const opt = document.createElement('option')
+          opt.value = sess.id
+          opt.textContent = sess.name
+          sel.appendChild(opt)
+        })
+        showUnlock()
+      } else {
+        showCreate()
+      }
+
+      // enter key on password → submit
+      document.getElementById('unlock-pw').addEventListener('keydown', e => { if (e.key === 'Enter') doUnlock() })
+      document.getElementById('create-pw2').addEventListener('keydown', e => { if (e.key === 'Enter') doCreate() })
+    }
+
+    // ─── Unlock existing session ────────────────────────────────────────────────
+    async function doUnlock() {
+      const id  = document.getElementById('session-select').value
+      const pw  = document.getElementById('unlock-pw').value
+      const err = document.getElementById('unlock-error')
+      err.textContent = ''
+      if (!pw) { err.textContent = s.shortPw; return }
+      setWorking(true)
+      try {
+        const raw  = await window.splash.readSession(id)
+        if (!raw) throw new Error('not_found')
+        const file = JSON.parse(raw)
+        const key  = await deriveKey(pw, unb64(file.salt))
+        const json  = await aesDecrypt(file.iv, file.enc, key)
+        const sess  = sessions.find(s => s.id === id)
+        window.splash.unlock(JSON.stringify({ id, name: sess?.name || '', settings: JSON.parse(json) }))
+      } catch {
+        err.textContent = s.wrongPw
+        document.getElementById('unlock-pw').value = ''
+        document.getElementById('unlock-pw').focus()
+      } finally {
+        setWorking(false)
+      }
+    }
+
+    // ─── Create new session ─────────────────────────────────────────────────────
+    async function doCreate() {
+      const name = document.getElementById('create-name').value.trim()
+      const pw   = document.getElementById('create-pw').value
+      const pw2  = document.getElementById('create-pw2').value
+      const err  = document.getElementById('create-error')
+      err.textContent = ''
+      if (!name) { err.textContent = s.name + '?'; return }
+      if (pw.length < 6) { err.textContent = s.shortPw; return }
+      if (pw !== pw2)    { err.textContent = s.mismatch; return }
+      setWorking(true)
+      try {
+        const DEFAULT_SETTINGS = {
+          language: lang, theme: theme, aiProvider: 'ollama',
+          providers: {
+            gemini:     { apiKey: '', model: 'gemini-2.0-flash' },
+            ollama:     { baseUrl: 'http://localhost:11434', model: 'llama3.2' },
+            openrouter: { apiKey: '', model: 'openai/gpt-4o-mini' },
+            anthropic:  { apiKey: '', model: 'claude-haiku-4-5-20251001' },
+            openai:     { apiKey: '', model: 'gpt-4o-mini' },
+          },
+          plugins: [], previewMaxChars: 200,
+        }
+        const id   = crypto.randomUUID()
+        const salt = rnd16()
+        const key  = await deriveKey(pw, salt)
+        const now  = Date.now()
+        const { iv, data: enc } = await aesEncrypt(JSON.stringify(DEFAULT_SETTINGS), key)
+        const file = JSON.stringify({ name, created: now, modified: now, salt: b64(salt), iv, enc })
+        await window.splash.writeSession(id, file)
+        window.splash.unlock(JSON.stringify({ id, name, settings: DEFAULT_SETTINGS }))
+      } catch (e) {
+        err.textContent = String(e)
+      } finally {
+        setWorking(false)
+      }
+    }
+
+    init()
   </script>
 
 </body>

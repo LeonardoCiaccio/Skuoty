@@ -20,7 +20,7 @@ export function unb64(s: string): Uint8Array<ArrayBuffer> {
 export async function pbkdf2Raw(
   password: string,
   salt: Uint8Array<ArrayBuffer>,
-  iterations = 200_000,
+  iterations = 100_000,
 ): Promise<Uint8Array<ArrayBuffer>> {
   const enc = new TextEncoder()
   const keyMaterial = await window.crypto.subtle.importKey(

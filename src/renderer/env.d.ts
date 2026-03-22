@@ -7,6 +7,7 @@ import { AppSettings } from '../shared/types'
 declare global {
   interface Window {
     skuoty: {
+      onSessionReady:      (cb: (json: string) => void) => void
       onClipboardCaptured: (cb: (text: string) => void) => void
       copyToClipboard: (text: string) => void
       pasteBack: (text: string) => void

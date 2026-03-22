@@ -1,12 +1,9 @@
 <template>
   <div class="flex flex-col h-screen bg-[var(--bg-base)] text-[var(--text-primary)] select-none overflow-hidden rounded-lg border border-[var(--border)]">
 
-    <!-- Session gate: shown until user unlocks a session -->
-    <SessionGate v-if="!sessionReady" @unlocked="onSessionUnlocked" />
-
     <!-- Title bar (draggable) -->
     <div class="flex items-center justify-between px-3 py-2 bg-[var(--bg-deep)] border-b border-[var(--border)]" style="-webkit-app-region: drag">
-      <span class="text-xs font-semibold tracking-widest text-[var(--text-muted)] uppercase">Skuoty <span class="font-normal opacity-50">v{{ appVersion }}</span></span>
+      <span class="text-xs font-semibold tracking-widest text-[var(--text-muted)] uppercase">Skuoty <span class="font-normal opacity-50">v{{ appVersion }}</span><span v-if="currentSession?.name" class="font-normal opacity-70 ml-2 normal-case">· {{ currentSession.name }}</span></span>
       <div class="flex gap-1" style="-webkit-app-region: no-drag">
         <button
           @click="showSettings = !showSettings"
@@ -20,7 +17,7 @@
     </div>
 
     <!-- Settings panel -->
-    <SettingsPanel v-if="showSettings" @close="showSettings = false" />
+    <SettingsPanel v-if="showSettings" @close="showSettings = false" @logout="onLogout" />
 
     <!-- Main content -->
     <template v-else>
@@ -80,17 +77,14 @@ import TextPreview    from './components/TextPreview.vue'
 import ElaboratedText from './components/ElaboratedText.vue'
 import PluginPanel    from './components/PluginPanel.vue'
 import SettingsPanel  from './components/SettingsPanel.vue'
-import SessionGate    from './components/SessionGate.vue'
 import { useSettings }  from './composables/useSettings'
 import { useSessions }  from './composables/useSessions'
 import type { AppSettings } from '../shared/types'
 
-const { settings, init, load } = useSettings()
-const { save: saveSession }    = useSessions()
+const { settings, load } = useSettings()
+const { save: saveSession, logout, current: currentSession } = useSessions()
 
 const appVersion = __APP_VERSION__
-
-const sessionReady = ref(false)
 
 const aiProviderOptions = computed(() => [
   { id: 'ollama',     name: 'Ollama',      model: settings.value.providers.ollama.model     },
@@ -132,19 +126,11 @@ watch(() => settings.value.language, (lang) => {
   window.skuoty.setLanguage(lang)
 })
 
-// Keep electron-store config.json in sync for splash screen theming
-watch(settings, (s) => {
-  window.skuoty.setSettings(s)
-}, { deep: true })
-
 // Debounced save of full settings to the encrypted session file
 let saveTimer: ReturnType<typeof setTimeout> | null = null
 watch(settings, (s) => {
-  if (!sessionReady.value) return
   if (saveTimer) clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => {
-    saveSession(s)
-  }, 500)
+  saveTimer = setTimeout(() => { saveSession(s) }, 500)
 }, { deep: true })
 
 const selectionText  = ref('')
@@ -152,13 +138,19 @@ const elaboratedText = ref('')
 const showSettings   = ref(false)
 const hasTarget      = ref(false)
 
-function onSessionUnlocked(loadedSettings: AppSettings) {
-  load(loadedSettings)
-  sessionReady.value = true
+function onLogout() {
+  logout()
+  showSettings.value = false
+  // Main window hides itself — user must reopen from tray and re-auth via splash
+  window.skuoty.hide()
 }
 
 onMounted(() => {
-  init()
+  window.skuoty.onSessionReady((json: string) => {
+    const payload = JSON.parse(json) as { id: string; name: string; settings: AppSettings }
+    load(payload.settings)
+    currentSession.value = { id: payload.id, name: payload.name, created: 0, modified: 0 }
+  })
   window.skuoty.onClipboardCaptured((text) => {
     selectionText.value  = text
     elaboratedText.value = ''

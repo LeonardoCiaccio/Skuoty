@@ -215,6 +215,14 @@
               <span class="text-xs text-[var(--text-primary)] flex-1 truncate font-medium">{{ s.name }}</span>
               <span v-if="s.id === current?.id" class="text-xs text-[#6366f1] font-semibold shrink-0">✓</span>
 
+              <!-- Switch to session (non-current only) -->
+              <button
+                v-if="s.id !== current?.id"
+                @click="openSwitchModal(s.id, s.name)"
+                class="text-xs text-[var(--text-muted)] hover:text-[#6366f1] transition-colors px-1"
+                :title="t('switchSession')"
+              >⇄</button>
+
               <!-- Rename -->
               <button
                 @click="openRenameModal(s.id, s.name)"
@@ -222,19 +230,17 @@
                 :title="t('renameSession')"
               >✎</button>
 
-              <!-- Change password (only current session) -->
+              <!-- Change password (all sessions) -->
               <button
-                v-if="s.id === current?.id"
                 @click="openChangePasswordModal(s.id)"
                 class="text-xs text-[var(--text-muted)] hover:text-[var(--text-second)] transition-colors px-1"
                 :title="t('sessionChangePassword')"
               >🔑</button>
 
-              <!-- Delete (disabled for current session) -->
+              <!-- Delete (all sessions) -->
               <button
                 @click="doDeleteSession(s.id)"
-                :disabled="s.id === current?.id"
-                class="text-xs text-[var(--text-muted)] hover:text-[var(--color-danger)] transition-colors px-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                class="text-xs text-[var(--text-muted)] hover:text-[var(--color-danger)] transition-colors px-1"
                 :title="t('deleteSession')"
               >✕</button>
             </div>
@@ -391,6 +397,26 @@
     </Transition>
   </Teleport>
 
+  <!-- Switch session modal -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div v-if="showSwitchModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" @click.self="showSwitchModal = false">
+        <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[320px] shadow-2xl flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-[var(--text-primary)]">{{ t('switchSession') }}: <span class="text-[#6366f1]">{{ switchTargetName }}</span></span>
+            <button @click="showSwitchModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+          </div>
+          <input v-model="switchPw" type="password" :placeholder="t('password')" class="field" @keyup.enter="doSwitch" autocomplete="current-password" />
+          <p v-if="switchError" class="text-xs text-[var(--color-danger)]">{{ switchError }}</p>
+          <div class="flex justify-end gap-2">
+            <button @click="showSwitchModal = false" class="btn-secondary text-xs px-3 py-1.5">{{ t('cancel') }}</button>
+            <button @click="doSwitch" :disabled="switchBusy" class="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">{{ t('switchSession') }}</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
   <!-- New session modal -->
   <Teleport to="body">
     <Transition name="fade">
@@ -502,10 +528,11 @@ import type { AIProvider, SkuotyPlugin } from '../../shared/types'
 
 const appVersion = __APP_VERSION__
 
-defineEmits<{ close: [] }>()
+const emit = defineEmits<{ close: []; logout: [] }>()
 
 const { settings, exportSettings, importSettings } = useSettings()
-const { sessions, current, list: listSessions, create: createSession, rename, changePassword, deleteSession } = useSessions()
+const { sessions, current, list: listSessions, create: createSession, open: openSession, rename, changePassword, deleteSession, save: saveSession, logout } = useSessions()
+const { load: loadSettings } = useSettings()
 const { t } = useI18n()
 
 const sections = [
@@ -788,12 +815,49 @@ async function doRename() {
   }
 }
 
+// Switch session
+const showSwitchModal  = ref(false)
+const switchTargetId   = ref('')
+const switchTargetName = ref('')
+const switchPw         = ref('')
+const switchError      = ref('')
+const switchBusy       = ref(false)
+
+function openSwitchModal(id: string, name: string) {
+  switchTargetId.value   = id
+  switchTargetName.value = name
+  switchPw.value         = ''
+  switchError.value      = ''
+  showSwitchModal.value  = true
+}
+
+async function doSwitch() {
+  switchError.value = ''
+  if (!switchPw.value) return
+  switchBusy.value = true
+  try {
+    const newSettings = await openSession(switchTargetId.value, switchPw.value)
+    loadSettings(newSettings)
+    showSwitchModal.value = false
+    flashSessionMsg(t.value('sessionSwitched'))
+  } catch {
+    switchError.value = t.value('wrongPassword')
+  } finally {
+    switchBusy.value = false
+  }
+}
+
 // Delete session
 async function doDeleteSession(id: string) {
   sessionActionError.value = ''
+  const wasCurrent = id === current.value?.id
   try {
     await deleteSession(id)
-    flashSessionMsg(t.value('sessionDeleted'))
+    if (wasCurrent) {
+      emit('logout')
+    } else {
+      flashSessionMsg(t.value('sessionDeleted'))
+    }
   } catch (e) {
     sessionActionError.value = e instanceof Error ? e.message : String(e)
   }
@@ -826,7 +890,7 @@ async function doChangePassword() {
   if (changePwNew.value !== changePwConfirm.value) { changePwError.value = t.value('passwordMismatch'); return }
   changePwBusy.value = true
   try {
-    await changePassword(changePwTargetId.value, changePwOld.value, changePwNew.value, settings.value)
+    await changePassword(changePwTargetId.value, changePwOld.value, changePwNew.value)
     changePwDone.value = true
     changePwOld.value = ''
     changePwNew.value = ''
@@ -846,7 +910,7 @@ const updateMsg        = ref('')
 
 function factoryReset() {
   settings.value = structuredClone(DEFAULT_SETTINGS)
-  window.skuoty.setSettings(settings.value)
+  saveSession(settings.value)
   factoryResetDone.value = true
   setTimeout(() => { factoryResetDone.value = false }, 2000)
 }
