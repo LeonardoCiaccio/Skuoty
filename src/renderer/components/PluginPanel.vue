@@ -53,7 +53,7 @@
           </div>
 
           <!-- Error -->
-          <p v-if="error" class="mb-3 text-xs text-red-400">{{ error }}</p>
+          <p v-if="error" class="mb-3 text-xs text-[var(--color-danger)]">{{ error }}</p>
 
           <!-- Run -->
           <button

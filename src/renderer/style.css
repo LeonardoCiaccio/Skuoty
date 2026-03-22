@@ -27,6 +27,11 @@ html, body, #app {
   --text-muted:   #6b6b6b;
   --text-faint:   #4a4a4a;
   --scrollbar:    #4a4a4a;
+  /* Semantic: contrasto verificato su sfondi dark */
+  --color-danger:       #f87171; /* red-400  — ratio ~5.1 su bg-base */
+  --color-danger-hover: #fca5a5; /* red-300  — più chiaro = più visibile su dark */
+  --color-success:      #34d399; /* emerald-400 — ratio ~5.3 su bg-base */
+  --color-success-hover:#6ee7b7; /* emerald-300 */
 }
 
 /* ── Theme: Light ── */
@@ -38,9 +43,14 @@ html, body, #app {
   --border:      #d0d0d0;
   --text-primary: #1a1a1a;
   --text-second:  #555555;
-  --text-muted:   #888888;
-  --text-faint:   #aaaaaa;
+  --text-muted:   #666666; /* scurito da #888 per contrasto su sfondi chiari */
+  --text-faint:   #999999;
   --scrollbar:    #bbbbbb;
+  /* Semantic: contrasto verificato su sfondi light */
+  --color-danger:       #991b1b; /* red-800  — ratio ~6.2 su bg-base, ~5.6 su bg-element */
+  --color-danger-hover: #b91c1c; /* red-700  — leggermente più chiaro su hover */
+  --color-success:      #166534; /* green-800 — ratio ~6.7 su bg-base */
+  --color-success-hover:#15803d; /* green-700 */
 }
 
 /* ── Scrollbar ── */

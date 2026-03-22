@@ -83,7 +83,7 @@
               <button
                 @click="resetProvider(p.id)"
                 :disabled="settings.aiProvider !== p.id"
-                class="px-2 py-0.5 text-xs rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-muted)] hover:text-red-400 transition-colors"
+                class="px-2 py-0.5 text-xs rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-muted)] hover:text-[var(--color-danger)] transition-colors"
                 :title="t('reset')"
               >↺</button>
 
@@ -93,8 +93,8 @@
                 :disabled="settings.aiProvider !== p.id || testState[p.id] === 'testing'"
                 :class="[
                   'px-2 py-0.5 text-xs rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors font-medium',
-                  testState[p.id] === 'ok'    ? 'text-emerald-600' :
-                  testState[p.id] === 'error' ? 'text-red-400'     : 'text-[var(--text-second)]',
+                  testState[p.id] === 'ok'    ? 'text-[var(--color-success)]' :
+                  testState[p.id] === 'error' ? 'text-[var(--color-danger)]'  : 'text-[var(--text-second)]',
                 ]"
               >
                 {{ testState[p.id] === 'testing' ? '…' : t('test') }}
@@ -102,7 +102,7 @@
             </div>
 
             <!-- Test error message -->
-            <p v-if="testState[p.id] === 'error' && testMsg[p.id]" class="text-xs text-red-400 mb-2">
+            <p v-if="testState[p.id] === 'error' && testMsg[p.id]" class="text-xs text-[var(--color-danger)] mb-2">
               {{ testMsg[p.id] }}
             </p>
 
@@ -127,7 +127,7 @@
                       :title="t('refreshModels')"
                     >{{ ollamaFetching ? '…' : '↺' }}</button>
                   </div>
-                  <p v-if="ollamaFetchError" class="text-xs text-red-400">{{ ollamaFetchError }}</p>
+                  <p v-if="ollamaFetchError" class="text-xs text-[var(--color-danger)]">{{ ollamaFetchError }}</p>
                 </div>
               </div>
             </template>
@@ -162,7 +162,7 @@
             placeholder='{&#10;  "name": "my-plugin",&#10;  "label": [{"en":"My Plugin"}],&#10;  "options": "...",&#10;  "prompt": "{{option}} {{context}}"&#10;}'
             class="field w-full resize-none font-mono text-xs"
           />
-          <p v-if="loadError" class="text-xs text-red-400 mt-1">{{ loadError }}</p>
+          <p v-if="loadError" class="text-xs text-[var(--color-danger)] mt-1">{{ loadError }}</p>
           <button @click="loadPlugin" class="mt-2 btn-primary text-xs px-3 py-1.5">{{ t('load') }}</button>
         </div>
 
@@ -185,7 +185,7 @@
             </span>
 
             <button @click="openEditor(idx)" class="text-xs text-[var(--text-muted)] hover:text-[var(--text-second)] transition-colors px-1" :title="t('edit')">✎</button>
-            <button @click="deletePlugin(idx)" class="text-xs text-[var(--text-muted)] hover:text-red-400 transition-colors px-1" :title="t('delete')">✕</button>
+            <button @click="deletePlugin(idx)" class="text-xs text-[var(--text-muted)] hover:text-[var(--color-danger)] transition-colors px-1" :title="t('delete')">✕</button>
           </div>
 
           <p v-if="!settings.plugins.length" class="text-xs text-[var(--text-faint)] italic">
@@ -202,14 +202,14 @@
           <div>
             <p class="text-xs text-[var(--text-muted)] mb-2">{{ t('exportDesc') }}</p>
             <button @click="doExport" :disabled="exporting" class="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">{{ t('export') }}</button>
-            <p v-if="exportDone" class="text-xs text-emerald-500 mt-1">{{ t('exportedToFile') }}</p>
+            <p v-if="exportDone" class="text-xs text-[var(--color-success)] mt-1">{{ t('exportedToFile') }}</p>
           </div>
 
           <div class="border-t border-[var(--border)] pt-3">
             <p class="text-xs text-[var(--text-muted)] mb-2">{{ t('importDesc') }}</p>
-            <p v-if="importError" class="text-xs text-red-400 mb-1">{{ importError }}</p>
+            <p v-if="importError" class="text-xs text-[var(--color-danger)] mb-1">{{ importError }}</p>
             <button @click="doImport" :disabled="importing" class="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">{{ t('import') }}</button>
-            <p v-if="importDone" class="text-xs text-emerald-500 mt-1">{{ t('importedFromFile') }}</p>
+            <p v-if="importDone" class="text-xs text-[var(--color-success)] mt-1">{{ t('importedFromFile') }}</p>
           </div>
         </div>
       </template>
@@ -230,9 +230,9 @@
             <p class="text-xs text-[var(--text-muted)]">{{ t('factoryResetDesc') }}</p>
             <button
               @click="factoryReset"
-              class="btn-secondary text-xs px-3 py-1.5 self-start text-red-400 hover:text-red-300"
+              class="btn-secondary text-xs px-3 py-1.5 self-start text-[var(--color-danger)] hover:text-[var(--color-danger-hover)]"
             >↺ {{ t('factoryReset') }}</button>
-            <p v-if="factoryResetDone" class="text-xs text-emerald-500">✓ {{ t('applied') }}</p>
+            <p v-if="factoryResetDone" class="text-xs text-[var(--color-success)]">✓ {{ t('applied') }}</p>
           </div>
 
           <!-- Update (placeholder) -->
@@ -265,7 +265,7 @@
             <button @click="closeEditor" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
           </div>
           <textarea v-model="editorJson" rows="14" class="field w-full resize-none font-mono text-xs" />
-          <p v-if="editorError" class="text-xs text-red-400">{{ editorError }}</p>
+          <p v-if="editorError" class="text-xs text-[var(--color-danger)]">{{ editorError }}</p>
           <div class="flex justify-end gap-2">
             <button @click="closeEditor" class="btn-secondary text-xs px-3 py-1.5">{{ t('cancel') }}</button>
             <button @click="saveEditor"  class="btn-primary  text-xs px-3 py-1.5">{{ t('save') }}</button>
