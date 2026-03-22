@@ -153,6 +153,23 @@ function createTray() {
 }
 
 
+// ─── Splash ───────────────────────────────────────────────────────────────────
+
+function createSplash(lang: string, theme: string) {
+  const splash = new BrowserWindow({
+    width: 400, height: 260,
+    frame: false, resizable: false,
+    alwaysOnTop: true, center: true, skipTaskbar: true,
+    webPreferences: { contextIsolation: true, nodeIntegration: false },
+  })
+
+  if (isDev) {
+    splash.loadURL(`http://localhost:5173/splash.html?lang=${lang}&theme=${theme}`)
+  } else {
+    splash.loadFile(path.join(__dirname, '../../renderer/splash.html'), { query: { lang, theme } })
+  }
+}
+
 // ─── Window ───────────────────────────────────────────────────────────────────
 
 function createWindow() {
@@ -274,6 +291,12 @@ app.whenReady().then(() => {
     writePasteScripts()
     startDaemon()   // compiles Win32 type once (~300 ms), then stays ready
   }
+
+  // Read lang/theme before creating windows so the splash is already themed
+  const saved = setupStore().get('settings') as { language?: string; theme?: string } | null
+  const splashLang  = saved?.language ?? 'en'
+  const splashTheme = saved?.theme    ?? 'dark'
+  createSplash(splashLang, splashTheme)
 
   createWindow()
   createTray()

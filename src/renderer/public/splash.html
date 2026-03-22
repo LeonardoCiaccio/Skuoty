@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Skuoty</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+    :root {
+      --bg-base:      #2a2a2a;
+      --bg-deep:      #1e1e1e;
+      --bg-element:   #3d3d3d;
+      --border:       #3a3a3a;
+      --text-primary: #f0f0f0;
+      --text-second:  #a0a0a0;
+      --text-muted:   #6b6b6b;
+      --accent:       #6366f1;
+      --accent-hover: #4f46e5;
+    }
+
+    [data-theme="light"] {
+      --bg-base:      #f5f5f5;
+      --bg-deep:      #e8e8e8;
+      --bg-element:   #d5d5d5;
+      --border:       #d0d0d0;
+      --text-primary: #1a1a1a;
+      --text-second:  #555555;
+      --text-muted:   #666666;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: system-ui, -apple-system, sans-serif;
+      user-select: none;
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      padding: 0;
+      border: 1px solid var(--border);
+    }
+
+    .inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding: 32px 36px 28px;
+      width: 100%;
+      flex: 1;
+    }
+
+    .logo {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      color: var(--accent);
+    }
+
+    .tagline {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: var(--border);
+      margin: 2px 0;
+    }
+
+    .tray-msg {
+      font-size: 12px;
+      color: var(--text-second);
+      text-align: center;
+      line-height: 1.7;
+      white-space: pre-line;
+    }
+
+    .footer {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 36px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-deep);
+    }
+
+    .countdown {
+      font-size: 11px;
+      color: var(--text-muted);
+      min-width: 20px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .progress-wrap {
+      flex: 1;
+      height: 2px;
+      background: var(--bg-element);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 100%;
+      transition: width 1s linear;
+    }
+
+    .close-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 14px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+
+    .close-btn:hover { background: var(--accent-hover); }
+  </style>
+</head>
+<body>
+
+  <div class="inner">
+    <div class="logo">SKUOTY</div>
+    <div class="tagline">Select &middot; Elaborate &middot; Done</div>
+    <div class="divider"></div>
+    <p class="tray-msg" id="msg"></p>
+  </div>
+
+  <div class="footer">
+    <span class="countdown" id="countdown"></span>
+    <div class="progress-wrap">
+      <div class="progress-bar" id="bar"></div>
+    </div>
+    <button class="close-btn" id="btn" onclick="closeSplash()"></button>
+  </div>
+
+  <script>
+    const DURATION = 5
+
+    const STRINGS = {
+      en: {
+        tray:  'Skuoty is now running in the system tray.\nClick the icon anytime to open it.',
+        close: 'Got it',
+        sec:   's',
+      },
+      it: {
+        tray:  "Skuoty gira in background, vicino all'orologio.\nClicca sull'icona per aprirlo quando vuoi.",
+        close: 'Ok',
+        sec:   's',
+      },
+      es: {
+        tray:  'Skuoty está en la bandeja del sistema.\nHaz clic en el icono para abrirlo cuando quieras.',
+        close: 'Entendido',
+        sec:   's',
+      },
+      fr: {
+        tray:  "Skuoty s'exécute dans la barre système.\nCliquez sur l'icône pour l'ouvrir quand vous voulez.",
+        close: 'Compris',
+        sec:   's',
+      },
+      de: {
+        tray:  'Skuoty läuft im Systembereich.\nKlicke auf das Symbol, um es zu öffnen.',
+        close: 'Verstanden',
+        sec:   's',
+      },
+    }
+
+    const params = new URLSearchParams(window.location.search)
+    const lang   = params.get('lang')  || 'en'
+    const theme  = params.get('theme') || 'dark'
+
+    document.documentElement.setAttribute('data-theme', theme)
+
+    const s = STRINGS[lang] || STRINGS['en']
+    document.getElementById('msg').textContent  = s.tray
+    document.getElementById('btn').textContent  = s.close
+
+    let remaining = DURATION
+    const countdownEl = document.getElementById('countdown')
+    const barEl       = document.getElementById('bar')
+
+    function update() {
+      countdownEl.textContent  = remaining + s.sec
+      barEl.style.width        = (remaining / DURATION * 100) + '%'
+    }
+
+    update()
+
+    let paused = false
+    let timer = setInterval(tick, 1000)
+
+    function tick() {
+      if (paused) return
+      remaining--
+      update()
+      if (remaining <= 0) { clearInterval(timer); window.close() }
+    }
+
+    document.body.addEventListener('mouseenter', () => { paused = true })
+    document.body.addEventListener('mouseleave', () => { paused = false })
+
+    function closeSplash() {
+      clearInterval(timer)
+      window.close()
+    }
+  </script>
+
+</body>
+</html>
