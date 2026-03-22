@@ -5,6 +5,8 @@ const STRINGS: Record<string, Record<string, string>> = {
   en: {
     // Main window
     selection:        'Selection',
+    chars:            'chars',
+    words:            'words',
     output:           'Output',
     selectionHint:    'Select text and press Ctrl+C+C to start',
     outputPlaceholder:'Processed text will appear here…',
@@ -69,6 +71,8 @@ const STRINGS: Record<string, Record<string, string>> = {
   },
   it: {
     selection:        'Selezione',
+    chars:            'caratteri',
+    words:            'parole',
     output:           'Output',
     selectionHint:    'Seleziona del testo e premi Ctrl+C+C per iniziare',
     outputPlaceholder:'Il testo elaborato apparirà qui…',
@@ -130,7 +134,7 @@ const STRINGS: Record<string, Record<string, string>> = {
     upToDate:         'Sei già alla versione più recente.',
   },
   es: {
-    selection: 'Selección', output: 'Salida',
+    selection: 'Selección', chars: 'caracteres', words: 'palabras', output: 'Salida',
     selectionHint: 'Selecciona texto y pulsa Ctrl+C+C para empezar',
     outputPlaceholder: 'El texto procesado aparecerá aquí…',
     copyOutput: 'Copiar salida', pasteBack: 'Pegar en origen',
@@ -157,7 +161,7 @@ const STRINGS: Record<string, Record<string, string>> = {
     upToDate: 'Ya tienes la última versión.',
   },
   fr: {
-    selection: 'Sélection', output: 'Résultat',
+    selection: 'Sélection', chars: 'caractères', words: 'mots', output: 'Résultat',
     selectionHint: 'Sélectionnez du texte et appuyez sur Ctrl+C+C pour commencer',
     outputPlaceholder: 'Le texte traité apparaîtra ici…',
     copyOutput: 'Copier le résultat', pasteBack: 'Coller dans la source',
@@ -184,7 +188,7 @@ const STRINGS: Record<string, Record<string, string>> = {
     upToDate: 'Vous avez déjà la dernière version.',
   },
   de: {
-    selection: 'Auswahl', output: 'Ausgabe',
+    selection: 'Auswahl', chars: 'Zeichen', words: 'Wörter', output: 'Ausgabe',
     selectionHint: 'Text auswählen und Strg+C+C drücken',
     outputPlaceholder: 'Verarbeiteter Text erscheint hier…',
     copyOutput: 'Ausgabe kopieren', pasteBack: 'Zurück einfügen',

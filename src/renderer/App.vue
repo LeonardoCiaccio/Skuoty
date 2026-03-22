@@ -22,6 +22,43 @@
     <!-- Main content -->
     <template v-else>
       <TextPreview :text="selectionText" :max-chars="settings.previewMaxChars" />
+
+      <!-- AI provider quick-switch (custom dropdown) -->
+      <div data-ai-bar class="relative inline-flex border border-[var(--border)] rounded-lg bg-[var(--bg-deep)] px-3 py-2 mx-3 my-1.5">
+        <!-- Trigger -->
+        <button
+          @click="aiDropdownOpen = !aiDropdownOpen"
+          class="inline-flex items-center gap-2 max-w-[260px]"
+        >
+          <span class="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider shrink-0">AI</span>
+          <span class="text-xs text-[var(--text-second)] truncate">{{ currentAiLabel }}</span>
+          <span class="text-[var(--text-faint)] text-xs shrink-0 transition-transform" :class="aiDropdownOpen ? 'rotate-180' : ''">▾</span>
+        </button>
+
+        <!-- Dropdown panel -->
+        <Teleport to="body">
+          <div v-if="aiDropdownOpen" class="fixed inset-0 z-40" @click="aiDropdownOpen = false" />
+          <Transition name="ai-drop">
+            <div
+              v-if="aiDropdownOpen"
+              class="fixed z-50 bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg shadow-2xl overflow-hidden"
+              :style="aiDropdownStyle"
+            >
+              <button
+                v-for="p in aiProviderOptions"
+                :key="p.id"
+                @click="settings.aiProvider = p.id; aiDropdownOpen = false"
+                class="w-full flex flex-col gap-0.5 px-4 py-3 text-left transition-colors hover:bg-[var(--bg-hover)]"
+                :class="settings.aiProvider === p.id ? 'bg-[#6366f1]/10' : ''"
+              >
+                <span class="text-xs font-medium" :class="settings.aiProvider === p.id ? 'text-[#6366f1]' : 'text-[var(--text-primary)]'">{{ p.name }}</span>
+                <span class="text-xs text-[var(--text-muted)] font-mono">{{ p.model }}</span>
+              </button>
+            </div>
+          </Transition>
+        </Teleport>
+      </div>
+
       <ElaboratedText v-model="elaboratedText" :has-target="hasTarget" @paste-back="pasteBack" @copy-done="copyDone" @reset="resetSession" />
       <PluginPanel
         :selection-text="selectionText"
@@ -34,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Cog6ToothIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 import TextPreview    from './components/TextPreview.vue'
 import ElaboratedText from './components/ElaboratedText.vue'
@@ -45,6 +82,36 @@ import { useSettings } from './composables/useSettings'
 const { settings, init } = useSettings()
 
 const appVersion = __APP_VERSION__
+
+const aiProviderOptions = computed(() => [
+  { id: 'ollama',     name: 'Ollama',      model: settings.value.providers.ollama.model     },
+  { id: 'gemini',     name: 'Gemini',      model: settings.value.providers.gemini.model     },
+  { id: 'openrouter', name: 'OpenRouter',  model: settings.value.providers.openrouter.model },
+  { id: 'anthropic',  name: 'Anthropic',   model: settings.value.providers.anthropic.model  },
+  { id: 'openai',     name: 'OpenAI',      model: settings.value.providers.openai.model     },
+])
+
+const currentAiLabel = computed(() => {
+  const p = aiProviderOptions.value.find(p => p.id === settings.value.aiProvider)
+  return p ? `${p.name} · ${p.model}` : settings.value.aiProvider
+})
+
+const aiDropdownOpen  = ref(false)
+const aiDropdownStyle = ref<Record<string, string>>({})
+
+watch(aiDropdownOpen, (open) => {
+  if (!open) return
+  const bar = document.querySelector('[data-ai-bar]') as HTMLElement | null
+  if (!bar) return
+  const rect = bar.getBoundingClientRect()
+  aiDropdownStyle.value = {
+    top:       `${rect.bottom}px`,
+    left:      `${rect.left}px`,
+    width:     '240px',
+    maxHeight: `${window.innerHeight - rect.bottom - 8}px`,
+    overflowY: 'auto',
+  }
+})
 
 // Apply theme to <html> so CSS variables are available everywhere (incl. teleported modals)
 watch(() => settings.value.theme, (t) => {
@@ -91,3 +158,8 @@ function pasteBack() {
   elaboratedText.value = ''
 }
 </script>
+
+<style scoped>
+.ai-drop-enter-active, .ai-drop-leave-active { transition: opacity 0.1s ease, transform 0.1s ease; }
+.ai-drop-enter-from, .ai-drop-leave-to       { opacity: 0; transform: translateY(-4px); }
+</style>

@@ -1,6 +1,11 @@
 <template>
   <div class="px-3 py-1 flex-1 flex flex-col min-h-0">
-    <p class="text-xs text-[var(--text-muted)] mb-1 uppercase tracking-wider">{{ t('output') }}</p>
+    <div class="flex items-baseline gap-2 mb-1">
+      <p class="text-xs text-[var(--text-muted)] uppercase tracking-wider">{{ t('output') }}</p>
+      <span v-if="modelValue" class="text-xs text-[var(--text-faint)]">
+        {{ modelValue.length }} {{ t('chars') }} · {{ wordCount }} {{ t('words') }}
+      </span>
+    </div>
     <div class="relative flex-1 min-h-0">
       <textarea
         :value="modelValue"
@@ -43,6 +48,7 @@
 
 <script setup lang="ts">
 
+import { computed } from 'vue'
 import { ClipboardDocumentIcon, ArrowUturnLeftIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { useI18n } from '../composables/useI18n'
 
@@ -55,6 +61,8 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+const wordCount = computed(() => props.modelValue.trim() ? props.modelValue.trim().split(/\s+/).length : 0)
 
 
 function copy() {

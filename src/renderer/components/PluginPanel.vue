@@ -29,10 +29,10 @@
         class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
         @click.self="closePopup"
       >
-        <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-72 shadow-2xl">
+        <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-6 w-72 shadow-2xl">
 
           <!-- Header -->
-          <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center justify-between mb-5">
             <span class="text-sm font-semibold text-[var(--text-primary)]">
               {{ getLabel(activePlugin.label, settings.language) }}
             </span>
@@ -40,11 +40,11 @@
           </div>
 
           <!-- Options dropdown (only when options is an array) -->
-          <div v-if="Array.isArray(activePlugin.options)" class="flex flex-col gap-1 mb-4">
+          <div v-if="Array.isArray(activePlugin.options)" class="flex flex-col gap-1.5 mb-5">
             <label class="text-xs text-[var(--text-muted)]">{{ t('option') }}</label>
             <select
               v-model="selectedOption"
-              class="bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[#6366f1]"
+              class="bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[#6366f1]"
             >
               <option v-for="opt in activePlugin.options" :key="opt.value" :value="opt.value">
                 {{ getLabel(opt.label, settings.language) }}
@@ -53,13 +53,13 @@
           </div>
 
           <!-- Error -->
-          <p v-if="error" class="mb-3 text-xs text-[var(--color-danger)]">{{ error }}</p>
+          <p v-if="error" class="mb-4 text-xs text-[var(--color-danger)]">{{ error }}</p>
 
           <!-- Run -->
           <button
             @click="run"
             :disabled="isRunning || !context"
-            class="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-[#6366f1] hover:bg-[#4f46e5] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs rounded-lg transition-colors font-medium"
+            class="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 bg-[#6366f1] hover:bg-[#4f46e5] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs rounded-lg transition-colors font-medium"
           >
             <svg v-if="isRunning" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
