@@ -19,6 +19,7 @@
     "dist:win": "npm run build && electron-builder --win",
     "dist:mac": "npm run build && electron-builder --mac",
     "dist:linux": "npm run build && scripts\\dist-linux.bat",
+    "dist:linux:ci": "npm run build && electron-builder --linux",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.main.json --noEmit"
   },
   "keywords": [
