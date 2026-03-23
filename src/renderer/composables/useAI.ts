@@ -92,7 +92,8 @@ async function callOllama(prompt: string, cfg: { baseUrl: string; model: string 
     body: JSON.stringify({ model: cfg.model, prompt, stream: false }),
   }))
   if (!res.ok) throw new AIError('errApi', `Ollama ${res.status}`)
-  const data = await res.json() as { response: string }
+  const data = await res.json() as { response?: string }
+  if (!data.response) throw new AIError('errEmptyResponse')
   return data.response.trim()
 }
 
@@ -107,8 +108,10 @@ async function callOpenRouter(prompt: string, cfg: { apiKey: string; model: stri
     const err = await res.json().catch(() => ({})) as { error?: { message?: string } }
     throw new AIError('errApi', err?.error?.message ?? `OpenRouter ${res.status}`)
   }
-  const data = await res.json() as { choices: { message: { content: string } }[] }
-  return data.choices[0].message.content.trim()
+  const data = await res.json() as { choices?: { message?: { content?: string } }[] }
+  const text = data?.choices?.[0]?.message?.content
+  if (!text) throw new AIError('errEmptyResponse')
+  return text.trim()
 }
 
 async function callAnthropic(prompt: string, cfg: { apiKey: string; model: string }): Promise<string> {
@@ -130,8 +133,10 @@ async function callAnthropic(prompt: string, cfg: { apiKey: string; model: strin
     const err = await res.json().catch(() => ({})) as { error?: { message?: string } }
     throw new AIError('errApi', err?.error?.message ?? `Anthropic ${res.status}`)
   }
-  const data = await res.json() as { content: { text: string }[] }
-  return data.content[0].text.trim()
+  const data = await res.json() as { content?: { text?: string }[] }
+  const text = data?.content?.[0]?.text
+  if (!text) throw new AIError('errEmptyResponse')
+  return text.trim()
 }
 
 async function callOpenAI(prompt: string, cfg: { apiKey: string; model: string }): Promise<string> {
@@ -145,6 +150,8 @@ async function callOpenAI(prompt: string, cfg: { apiKey: string; model: string }
     const err = await res.json().catch(() => ({})) as { error?: { message?: string } }
     throw new AIError('errApi', err?.error?.message ?? `OpenAI ${res.status}`)
   }
-  const data = await res.json() as { choices: { message: { content: string } }[] }
-  return data.choices[0].message.content.trim()
+  const data = await res.json() as { choices?: { message?: { content?: string } }[] }
+  const text = data?.choices?.[0]?.message?.content
+  if (!text) throw new AIError('errEmptyResponse')
+  return text.trim()
 }

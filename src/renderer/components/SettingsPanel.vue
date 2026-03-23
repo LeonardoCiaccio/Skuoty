@@ -655,10 +655,11 @@ function openEditor(idx: number) {
 }
 function closeEditor() { editorIdx.value = null; editorError.value = '' }
 function saveEditor() {
+  if (editorIdx.value === null) return
   const v = validatePlugin(editorJson.value)
   if (!v) { editorError.value = 'Invalid plugin JSON.'; return }
-  const enabled = settings.value.plugins[editorIdx.value!].enabled
-  settings.value.plugins[editorIdx.value!] = { ...v, enabled }
+  const enabled = settings.value.plugins[editorIdx.value].enabled
+  settings.value.plugins[editorIdx.value] = { ...v, enabled }
   closeEditor()
 }
 

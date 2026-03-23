@@ -1,9 +1,12 @@
 // ─── Crypto utilities ──────────────────────────────────────────────────────────
 // AES-GCM + PBKDF2 helpers used by both session encryption and export/import.
 
-/** Base64 encode a Uint8Array */
+/** Base64 encode a Uint8Array.
+ *  Uses a loop instead of spread to avoid stack overflow on large payloads. */
 export function b64(arr: Uint8Array<ArrayBuffer>): string {
-  return btoa(String.fromCharCode(...arr))
+  let binary = ''
+  for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i])
+  return btoa(binary)
 }
 
 /** Base64 decode to Uint8Array */

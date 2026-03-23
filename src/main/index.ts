@@ -109,8 +109,17 @@ function startDaemon() {
     }
   })
 
-  daemon.on('close', () => { daemon = null; daemonReady = false })
-  daemon.on('error', () => { daemon = null; daemonReady = false })
+  daemon.on('close', () => {
+    daemon = null
+    daemonReady = false
+    // Drain pending HWND queries so callers don't hang forever
+    while (daemonQueue.length) daemonQueue.shift()?.('0')
+  })
+  daemon.on('error', () => {
+    daemon = null
+    daemonReady = false
+    while (daemonQueue.length) daemonQueue.shift()?.('0')
+  })
 }
 
 /** Returns the HWND of the foreground window in ~5 ms (after daemon is ready). */
@@ -225,6 +234,17 @@ async function showWindow(text: string) {
   sendTextToRenderer(text)
 }
 
+// ─── Session path validation ──────────────────────────────────────────────────
+
+/** Returns the resolved .skuoty path only if `id` is a valid UUID-style string.
+ *  Rejects path traversal attempts (e.g. "../../etc/passwd"). */
+function safeSessionPath(id: string): string | null {
+  if (typeof id !== 'string' || !/^[a-zA-Z0-9\-]+$/.test(id)) return null
+  const p = path.resolve(SESSIONS_DIR, `${id}.skuoty`)
+  if (!p.startsWith(path.resolve(SESSIONS_DIR))) return null
+  return p
+}
+
 // ─── IPC ──────────────────────────────────────────────────────────────────────
 
 function setupIPC() {
@@ -240,9 +260,12 @@ function setupIPC() {
   })
 
   ipcMain.on(IPC.RENDERER_READY, () => { rendererReady = true })
-  ipcMain.on(IPC.COPY_TO_CLIPBOARD, (_e, text: string) => { clipboard.writeText(text) })
+  ipcMain.on(IPC.COPY_TO_CLIPBOARD, (_e, text: string) => {
+    if (typeof text === 'string') clipboard.writeText(text)
+  })
 
   ipcMain.on(IPC.PASTE_BACK, (_e, text: string) => {
+    if (typeof text !== 'string') return
     clipboard.writeText(text)
     mainWindow?.hide()
     setTimeout(simulatePaste, 200)
@@ -254,6 +277,8 @@ function setupIPC() {
   ipcMain.on(IPC.WINDOW_HIDE, () => { mainWindow?.hide() })
 
   ipcMain.on(IPC.LANGUAGE_CHANGED, (_e, lang: string) => {
+    const SUPPORTED = ['en', 'it', 'es', 'fr', 'de']
+    if (typeof lang !== 'string' || !SUPPORTED.includes(lang)) return
     currentLang = lang
     if (tray) tray.setContextMenu(buildTrayMenu())
   })
@@ -274,34 +299,39 @@ function setupIPC() {
 
   ipcMain.handle(IPC.SESSION_LIST, () => {
     ensureSessionsDir()
-    try {
-      return readdirSync(SESSIONS_DIR)
-        .filter(f => f.endsWith('.skuoty'))
-        .map(f => {
+    return readdirSync(SESSIONS_DIR)
+      .filter(f => f.endsWith('.skuoty'))
+      .map(f => {
+        try {
           const id  = f.replace('.skuoty', '')
           const raw = readFileSync(path.join(SESSIONS_DIR, f), 'utf-8')
           const { name, created, modified } = JSON.parse(raw)
           return { id, name, created, modified }
-        })
-    } catch { return [] }
+        } catch {
+          return null   // skip corrupted files without hiding valid sessions
+        }
+      })
+      .filter(Boolean)
   })
 
   ipcMain.handle(IPC.SESSION_READ, (_e, id: string) => {
     ensureSessionsDir()
-    const p = path.join(SESSIONS_DIR, `${id}.skuoty`)
-    if (!existsSync(p)) return null
+    const p = safeSessionPath(id)
+    if (!p || !existsSync(p)) return null
     return readFileSync(p, 'utf-8')
   })
 
   ipcMain.handle(IPC.SESSION_WRITE, (_e, id: string, data: string) => {
     ensureSessionsDir()
-    writeFileSync(path.join(SESSIONS_DIR, `${id}.skuoty`), data, 'utf-8')
+    const p = safeSessionPath(id)
+    if (!p) return
+    writeFileSync(p, data, 'utf-8')
   })
 
   ipcMain.handle(IPC.SESSION_DELETE, (_e, id: string) => {
     ensureSessionsDir()
-    const p = path.join(SESSIONS_DIR, `${id}.skuoty`)
-    if (existsSync(p)) unlinkSync(p)
+    const p = safeSessionPath(id)
+    if (p && existsSync(p)) unlinkSync(p)
   })
 
   ipcMain.handle(IPC.IMPORT_FILE, async () => {

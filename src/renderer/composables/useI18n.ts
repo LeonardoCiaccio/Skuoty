@@ -167,7 +167,7 @@ const STRINGS: Record<string, Record<string, string>> = {
     checkUpdate:      'Controlla aggiornamenti',
     updateDesc:       'Verifica se è disponibile una nuova versione di Skuoty.',
     upToDate:         'Sei già alla versione più recente.',
-    // Sessioni
+    // Sessions
     sessions:             'Sessioni',
     noSessions:           'Nessuna sessione trovata.',
     createFirstSession:   'Crea la tua prima sessione',

@@ -79,14 +79,14 @@ import PluginPanel    from './components/PluginPanel.vue'
 import SettingsPanel  from './components/SettingsPanel.vue'
 import { useSettings }  from './composables/useSettings'
 import { useSessions }  from './composables/useSessions'
-import type { AppSettings } from '../shared/types'
+import type { AppSettings, AIProvider } from '../shared/types'
 
 const { settings, load } = useSettings()
 const { save: saveSession, logout, current: currentSession } = useSessions()
 
 const appVersion = __APP_VERSION__
 
-const aiProviderOptions = computed(() => [
+const aiProviderOptions = computed<{ id: AIProvider; name: string; model: string }[]>(() => [
   { id: 'ollama',     name: 'Ollama',      model: settings.value.providers.ollama.model     },
   { id: 'gemini',     name: 'Gemini',      model: settings.value.providers.gemini.model     },
   { id: 'openrouter', name: 'OpenRouter',  model: settings.value.providers.openrouter.model },
@@ -133,6 +133,12 @@ watch(settings, (s) => {
   saveTimer = setTimeout(() => { saveSession(s) }, 500)
 }, { deep: true })
 
+// Cancel any pending save when the active session changes to avoid writing
+// stale settings from the previous session into the newly loaded one
+watch(() => currentSession.value?.id, () => {
+  if (saveTimer) { clearTimeout(saveTimer); saveTimer = null }
+})
+
 const selectionText  = ref('')
 const elaboratedText = ref('')
 const showSettings   = ref(false)
@@ -147,9 +153,15 @@ function onLogout() {
 
 onMounted(() => {
   window.skuoty.onSessionReady((json: string) => {
-    const payload = JSON.parse(json) as { id: string; name: string; settings: AppSettings }
-    load(payload.settings)
-    currentSession.value = { id: payload.id, name: payload.name, created: 0, modified: 0 }
+    try {
+      // Cancel any pending save before loading new session data
+      if (saveTimer) { clearTimeout(saveTimer); saveTimer = null }
+      const payload = JSON.parse(json) as { id: string; name: string; settings: AppSettings }
+      load(payload.settings)
+      currentSession.value = { id: payload.id, name: payload.name, created: 0, modified: 0 }
+    } catch {
+      console.error('[skuoty] Failed to parse session payload')
+    }
   })
   window.skuoty.onClipboardCaptured((text) => {
     selectionText.value  = text

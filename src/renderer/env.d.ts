@@ -1,10 +1,11 @@
 /// <reference types="vite/client" />
 
-declare const __APP_VERSION__: string
-
 import { AppSettings } from '../shared/types'
+import type { AIProvider } from '../shared/types'
 
 declare global {
+  const __APP_VERSION__: string
+
   interface Window {
     skuoty: {
       onSessionReady:      (cb: (json: string) => void) => void
