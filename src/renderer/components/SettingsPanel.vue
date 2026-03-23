@@ -514,6 +514,29 @@
       </div>
     </Transition>
   </Teleport>
+
+  <!-- Confirm delete session modal -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div
+        v-if="showConfirmDeleteModal"
+        class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+        @click.self="showConfirmDeleteModal = false"
+      >
+        <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[340px] shadow-2xl flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-[var(--color-danger)]">{{ t('deleteSession') }}</span>
+            <button @click="showConfirmDeleteModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+          </div>
+          <p class="text-sm text-[var(--text-primary)]">{{ confirmDeleteMsg }}</p>
+          <div class="flex justify-end gap-2">
+            <button @click="showConfirmDeleteModal = false" class="btn-secondary text-xs px-3 py-1.5">{{ t('cancel') }}</button>
+            <button @click="confirmDeleteSession" class="btn-danger text-xs px-3 py-1.5">{{ t('deleteSession') }}</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -848,7 +871,20 @@ async function doSwitch() {
 }
 
 // Delete session
-async function doDeleteSession(id: string) {
+const showConfirmDeleteModal = ref(false)
+const confirmDeleteTargetId  = ref('')
+const confirmDeleteMsg       = ref('')
+
+function doDeleteSession(id: string) {
+  const sess = sessions.value.find(s => s.id === id)
+  confirmDeleteTargetId.value = id
+  confirmDeleteMsg.value = t.value('confirmDeleteSession').replace('{name}', sess?.name ?? id)
+  showConfirmDeleteModal.value = true
+}
+
+async function confirmDeleteSession() {
+  const id = confirmDeleteTargetId.value
+  showConfirmDeleteModal.value = false
   sessionActionError.value = ''
   const wasCurrent = id === current.value?.id
   try {
@@ -947,6 +983,7 @@ watch(active, (a) => { if (a === 'sessions') listSessions() })
 }
 .btn-primary   { @apply bg-[#6366f1] hover:bg-[#4f46e5] text-white rounded-lg transition-colors font-medium; }
 .btn-secondary { @apply bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] text-[var(--text-second)] rounded-lg transition-colors; }
+.btn-danger    { @apply bg-[var(--color-danger)] hover:opacity-90 text-white rounded-lg transition-colors font-medium; }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.15s ease; }
 .fade-enter-from,  .fade-leave-to      { opacity: 0; }
 </style>
