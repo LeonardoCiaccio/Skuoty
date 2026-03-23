@@ -44,10 +44,6 @@ It lives in the system tray and stays out of your way until you need it.
 
 ---
 
-## Demo
-
-> **📌 GIF placeholder** — add your demo recording at `assets/demo.gif` and uncomment the `<img>` tag at the top of this file.
-
 ---
 
 ## Supported AI Providers
