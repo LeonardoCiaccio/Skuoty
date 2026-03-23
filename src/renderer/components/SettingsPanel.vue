@@ -186,7 +186,7 @@
             </span>
 
             <button @click="openEditor(idx)" class="text-xs text-[var(--text-muted)] hover:text-[var(--text-second)] transition-colors px-1" :title="t('edit')"><PencilIcon class="w-3.5 h-3.5" /></button>
-            <button @click="deletePlugin(idx)" class="text-xs text-[var(--text-muted)] hover:text-[var(--color-danger)] transition-colors px-1" :title="t('delete')"><XMarkIcon class="w-3.5 h-3.5" /></button>
+            <button @click="openDeletePluginModal(idx)" class="text-xs text-[var(--text-muted)] hover:text-[var(--color-danger)] transition-colors px-1" :title="t('delete')"><XMarkIcon class="w-3.5 h-3.5" /></button>
           </div>
 
           <p v-if="!settings.plugins.length" class="text-xs text-[var(--text-faint)] italic">
@@ -293,7 +293,7 @@
           <div class="flex flex-col gap-2">
             <p class="text-xs text-[var(--text-muted)]">{{ t('factoryResetDesc') }}</p>
             <button
-              @click="factoryReset"
+              @click="openFactoryResetModal"
               class="btn-secondary text-xs px-3 py-1.5 self-start text-[var(--color-danger)] hover:text-[var(--color-danger-hover)]"
             ><span class="flex items-center gap-1.5"><ArrowPathIcon class="w-3.5 h-3.5" />{{ t('factoryReset') }}</span></button>
             <p v-if="factoryResetDone" class="flex items-center gap-1 text-xs text-[var(--color-success)]"><CheckIcon class="w-3.5 h-3.5" />{{ t('applied') }}</p>
@@ -523,6 +523,52 @@
     </Transition>
   </Teleport>
 
+  <!-- Confirm delete plugin modal -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div
+        v-if="showConfirmDeletePluginModal"
+        class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+        @click.self="showConfirmDeletePluginModal = false"
+      >
+        <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[340px] shadow-2xl flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-[var(--color-danger)]">{{ t('deletePlugin') }}</span>
+            <button @click="showConfirmDeletePluginModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"><XMarkIcon class="w-3.5 h-3.5" /></button>
+          </div>
+          <p class="text-sm text-[var(--text-primary)]">{{ t('confirmDeletePlugin').replace('{name}', confirmDeletePluginName) }}</p>
+          <div class="flex justify-end gap-2">
+            <button @click="showConfirmDeletePluginModal = false" class="btn-secondary text-xs px-3 py-1.5">{{ t('cancel') }}</button>
+            <button @click="confirmDeletePlugin" class="btn-danger text-xs px-3 py-1.5">{{ t('deletePlugin') }}</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
+  <!-- Confirm factory reset modal -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div
+        v-if="showConfirmFactoryReset"
+        class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+        @click.self="showConfirmFactoryReset = false"
+      >
+        <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[340px] shadow-2xl flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-[var(--color-danger)]">{{ t('factoryReset') }}</span>
+            <button @click="showConfirmFactoryReset = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"><XMarkIcon class="w-3.5 h-3.5" /></button>
+          </div>
+          <p class="text-sm text-[var(--text-primary)]">{{ t('confirmFactoryReset') }}</p>
+          <div class="flex justify-end gap-2">
+            <button @click="showConfirmFactoryReset = false" class="btn-secondary text-xs px-3 py-1.5">{{ t('cancel') }}</button>
+            <button @click="factoryReset" class="btn-danger text-xs px-3 py-1.5">{{ t('factoryReset') }}</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
   <!-- Confirm delete session modal -->
   <Teleport to="body">
     <Transition name="fade">
@@ -664,7 +710,23 @@ function saveEditor() {
 }
 
 // ── Plugin delete ─────────────────────────────────────────────────────────────
-function deletePlugin(idx: number) { settings.value.plugins.splice(idx, 1) }
+const showConfirmDeletePluginModal = ref(false)
+const confirmDeletePluginIdx       = ref(-1)
+const confirmDeletePluginName      = ref('')
+
+function openDeletePluginModal(idx: number) {
+  const plugin = settings.value.plugins[idx]
+  confirmDeletePluginIdx.value  = idx
+  confirmDeletePluginName.value = getLabel(plugin.label, settings.value.language)
+  showConfirmDeletePluginModal.value = true
+}
+
+function confirmDeletePlugin() {
+  if (confirmDeletePluginIdx.value >= 0) {
+    settings.value.plugins.splice(confirmDeletePluginIdx.value, 1)
+  }
+  showConfirmDeletePluginModal.value = false
+}
 
 // ── Load new plugin ───────────────────────────────────────────────────────────
 const loadJson  = ref('')
@@ -953,11 +1015,17 @@ async function doChangePassword() {
 }
 
 // ── Info / factory reset / update ─────────────────────────────────────────────
-const factoryResetDone = ref(false)
-const updateChecking   = ref(false)
-const updateMsg        = ref('')
+const factoryResetDone        = ref(false)
+const showConfirmFactoryReset = ref(false)
+const updateChecking          = ref(false)
+const updateMsg               = ref('')
+
+function openFactoryResetModal() {
+  showConfirmFactoryReset.value = true
+}
 
 function factoryReset() {
+  showConfirmFactoryReset.value = false
   settings.value = structuredClone(DEFAULT_SETTINGS)
   saveSession(settings.value)
   factoryResetDone.value = true

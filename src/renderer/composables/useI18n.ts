@@ -102,6 +102,9 @@ const STRINGS: Record<string, Record<string, string>> = {
     newSessionName:       'New name',
     oldPassword:          'Old password',
     newPassword:          'New password',
+    deletePlugin:         'Delete plugin',
+    confirmDeletePlugin:  'Delete plugin "{name}"? This action cannot be undone.',
+    confirmFactoryReset:  'Reset all settings and plugins to factory defaults? This action cannot be undone.',
   },
   it: {
     selection:        'Selezione',
@@ -200,6 +203,9 @@ const STRINGS: Record<string, Record<string, string>> = {
     newSessionName:       'Nuovo nome',
     oldPassword:          'Vecchia password',
     newPassword:          'Nuova password',
+    deletePlugin:         'Elimina plugin',
+    confirmDeletePlugin:  'Eliminare il plugin "{name}"? L\'azione è irreversibile.',
+    confirmFactoryReset:  'Ripristinare tutte le impostazioni e i plugin ai valori di fabbrica? L\'azione è irreversibile.',
   },
   es: {
     selection: 'Selección', chars: 'caracteres', words: 'palabras', output: 'Salida',
@@ -259,6 +265,9 @@ const STRINGS: Record<string, Record<string, string>> = {
     newSessionName:       'Nuevo nombre',
     oldPassword:          'Contraseña antigua',
     newPassword:          'Nueva contraseña',
+    deletePlugin:         'Eliminar plugin',
+    confirmDeletePlugin:  '¿Eliminar el plugin "{name}"? Esta acción es irreversible.',
+    confirmFactoryReset:  '¿Restablecer todos los ajustes y plugins a los valores de fábrica? Esta acción es irreversible.',
   },
   fr: {
     selection: 'Sélection', chars: 'caractères', words: 'mots', output: 'Résultat',
@@ -318,6 +327,9 @@ const STRINGS: Record<string, Record<string, string>> = {
     newSessionName:       'Nouveau nom',
     oldPassword:          'Ancien mot de passe',
     newPassword:          'Nouveau mot de passe',
+    deletePlugin:         'Supprimer le plugin',
+    confirmDeletePlugin:  'Supprimer le plugin "{name}" ? Cette action est irréversible.',
+    confirmFactoryReset:  'Réinitialiser tous les paramètres et plugins aux valeurs d\'usine ? Cette action est irréversible.',
   },
   de: {
     selection: 'Auswahl', chars: 'Zeichen', words: 'Wörter', output: 'Ausgabe',
@@ -377,6 +389,9 @@ const STRINGS: Record<string, Record<string, string>> = {
     newSessionName:       'Neuer Name',
     oldPassword:          'Altes Passwort',
     newPassword:          'Neues Passwort',
+    deletePlugin:         'Plugin löschen',
+    confirmDeletePlugin:  'Plugin "{name}" löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
+    confirmFactoryReset:  'Alle Einstellungen und Plugins auf Werksstandard zurücksetzen? Diese Aktion kann nicht rückgängig gemacht werden.',
   },
 }
 
