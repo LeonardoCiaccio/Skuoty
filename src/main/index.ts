@@ -68,6 +68,7 @@ public class SKPaste {
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
     [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr h);
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int n);
+    [DllImport("user32.dll")] public static extern bool IsIconic(IntPtr h);
     [DllImport("user32.dll")] public static extern int  GetWindowThreadProcessId(IntPtr h, IntPtr p);
     [DllImport("kernel32.dll")] public static extern int GetCurrentThreadId();
     [DllImport("user32.dll")] public static extern bool AttachThreadInput(int a, int b, bool f);
@@ -77,7 +78,7 @@ public class SKPaste {
 $cur = [SKPaste]::GetCurrentThreadId()
 $tgt = [SKPaste]::GetWindowThreadProcessId([IntPtr]$Hwnd, [IntPtr]::Zero)
 [SKPaste]::AttachThreadInput($cur, $tgt, $true)
-[SKPaste]::ShowWindow([IntPtr]$Hwnd, 9)
+if ([SKPaste]::IsIconic([IntPtr]$Hwnd)) { [SKPaste]::ShowWindow([IntPtr]$Hwnd, 9) }
 [SKPaste]::SetForegroundWindow([IntPtr]$Hwnd)
 [SKPaste]::BringWindowToTop([IntPtr]$Hwnd)
 [SKPaste]::AttachThreadInput($cur, $tgt, $false)
