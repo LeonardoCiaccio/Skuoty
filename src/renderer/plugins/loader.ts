@@ -20,7 +20,7 @@ export async function loadPlugins(): Promise<SkuotyPlugin[]> {
     if (path === './loader.ts') continue
     try {
       const mod = await modules[path]()
-      if (mod.default && mod.default.id) {
+      if (mod.default && mod.default.name) {
         plugins.push(mod.default)
       }
     } catch (e) {

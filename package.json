@@ -1,6 +1,6 @@
 {
   "name": "skuoty",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "AI-powered text processor triggered by double Ctrl+C",
   "main": "dist/main/main/index.js",
   "scripts": {
