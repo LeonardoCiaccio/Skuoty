@@ -21,6 +21,7 @@ let dialogOpen = false
 let rendererReady = false
 let isQuitting = false
 let currentLang = 'en'
+let sessionActive = false
 const isDev = process.env.NODE_ENV === 'development'
 
 const TRAY_LABELS: Record<string, { show: string; quit: string }> = {
@@ -145,7 +146,10 @@ function simulatePaste() {
 function buildTrayMenu() {
   const labels = TRAY_LABELS[currentLang] ?? TRAY_LABELS['en']
   return Menu.buildFromTemplate([
-    { label: labels.show, click: () => { mainWindow?.show(); mainWindow?.focus() } },
+    { label: labels.show, click: () => {
+      if (sessionActive) { mainWindow?.show(); mainWindow?.focus() }
+      else if (splashWindow) { splashWindow.show(); splashWindow.focus() }
+    }},
     { type: 'separator' },
     { label: labels.quit, click: () => app.quit() },
   ])
@@ -161,7 +165,8 @@ function createTray() {
   tray.on('click', () => {
     if (!mainWindow) return
     if (mainWindow.isVisible()) mainWindow.hide()
-    else { mainWindow.show(); mainWindow.focus() }
+    else if (sessionActive) { mainWindow.show(); mainWindow.focus() }
+    else if (splashWindow) { splashWindow.show(); splashWindow.focus() }
   })
 }
 
@@ -220,7 +225,7 @@ function sendTextToRenderer(text: string) {
 }
 
 async function showWindow(text: string) {
-  if (!mainWindow) return
+  if (!mainWindow || !sessionActive) return
 
   // Query the daemon BEFORE showing Skuoty — at this point the user's window
   // is still in the foreground, so we get the correct HWND.
@@ -250,6 +255,7 @@ function safeSessionPath(id: string): string | null {
 function setupIPC() {
   // Session unlocked from splash → forward to main window, show it, close splash
   ipcMain.on('session:unlocked', (_e, settingsJSON: string) => {
+    sessionActive = true
     if (mainWindow) {
       mainWindow.webContents.send('session:ready', settingsJSON)
       mainWindow.show()
@@ -275,6 +281,19 @@ function setupIPC() {
   ipcMain.on(IPC.SETTINGS_SET, (_e, s) => { setupStore().set('settings', s) })
 
   ipcMain.on(IPC.WINDOW_HIDE, () => { mainWindow?.hide() })
+
+  ipcMain.on(IPC.SHOW_SPLASH, () => {
+    sessionActive = false
+    mainWindow?.hide()
+    if (!splashWindow) {
+      const store = setupStore()
+      const theme = (store.get('settings') as { theme?: string } | undefined)?.theme ?? 'dark'
+      createSplash(currentLang, theme)
+    } else {
+      splashWindow.show()
+      splashWindow.focus()
+    }
+  })
 
   ipcMain.on(IPC.LANGUAGE_CHANGED, (_e, lang: string) => {
     const SUPPORTED = ['en', 'it', 'es', 'fr', 'de']
@@ -361,7 +380,16 @@ function setupIPC() {
 
 const gotLock = app.requestSingleInstanceLock()
 if (!gotLock) {
-  app.quit()
+  app.whenReady().then(() => {
+    dialog.showMessageBoxSync({
+      type: 'warning',
+      title: 'Skuoty',
+      message: 'Skuoty is already running.',
+      detail: 'Please close the existing Skuoty instance before opening a new one.',
+      buttons: ['OK'],
+    })
+    app.quit()
+  })
 } else {
   app.on('second-instance', () => {
     if (mainWindow) { mainWindow.show(); mainWindow.focus() }

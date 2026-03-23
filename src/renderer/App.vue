@@ -147,8 +147,7 @@ const hasTarget      = ref(false)
 function onLogout() {
   logout()
   showSettings.value = false
-  // Main window hides itself — user must reopen from tray and re-auth via splash
-  window.skuoty.hide()
+  window.skuoty.showSplash()
 }
 
 onMounted(() => {
