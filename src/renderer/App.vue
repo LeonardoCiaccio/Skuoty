@@ -32,7 +32,7 @@
         >
           <span class="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider shrink-0">AI</span>
           <span class="text-xs text-[var(--text-second)] truncate">{{ currentAiLabel }}</span>
-          <span class="text-[var(--text-faint)] text-xs shrink-0 transition-transform" :class="aiDropdownOpen ? 'rotate-180' : ''">▾</span>
+          <ChevronDownIcon class="w-3.5 h-3.5 text-[var(--text-faint)] shrink-0 transition-transform" :class="aiDropdownOpen ? 'rotate-180' : ''" />
         </button>
 
         <!-- Dropdown panel -->
@@ -72,7 +72,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { Cog6ToothIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
+import { Cog6ToothIcon, ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
 import TextPreview    from './components/TextPreview.vue'
 import ElaboratedText from './components/ElaboratedText.vue'
 import PluginPanel    from './components/PluginPanel.vue'

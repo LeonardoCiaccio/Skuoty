@@ -42,11 +42,11 @@
               <button
                 @click="settings.theme = 'dark'"
                 :class="['px-3 py-1.5 text-xs rounded-lg border transition-colors', settings.theme === 'dark' ? 'border-[#6366f1] bg-[#6366f1]/10 text-white' : 'border-[var(--border)] text-[var(--text-second)] hover:border-[var(--text-muted)]']"
-              >🌙 {{ t('themeDark') }}</button>
+              ><span class="flex items-center gap-1.5"><MoonIcon class="w-3.5 h-3.5" />{{ t('themeDark') }}</span></button>
               <button
                 @click="settings.theme = 'light'"
                 :class="['px-3 py-1.5 text-xs rounded-lg border transition-colors', settings.theme === 'light' ? 'border-[#6366f1] bg-[#6366f1]/10 text-[#6366f1]' : 'border-[var(--border)] text-[var(--text-second)] hover:border-[var(--text-muted)]']"
-              >☀️ {{ t('themeLight') }}</button>
+              ><span class="flex items-center gap-1.5"><SunIcon class="w-3.5 h-3.5" />{{ t('themeLight') }}</span></button>
             </div>
           </div>
 
@@ -85,7 +85,7 @@
                 :disabled="settings.aiProvider !== p.id"
                 class="px-2 py-0.5 text-xs rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--text-muted)] hover:text-[var(--color-danger)] transition-colors"
                 :title="t('reset')"
-              >↺</button>
+              ><ArrowPathIcon class="w-3.5 h-3.5" /></button>
 
               <!-- Test button — disabled when provider not selected -->
               <button
@@ -97,7 +97,8 @@
                   testState[p.id] === 'error' ? 'text-[var(--color-danger)]'  : 'text-[var(--text-second)]',
                 ]"
               >
-                {{ testState[p.id] === 'testing' ? '…' : t('test') }}
+                <ArrowPathIcon v-if="testState[p.id] === 'testing'" class="w-3.5 h-3.5 animate-spin" />
+                <span v-else>{{ t('test') }}</span>
               </button>
             </div>
 
@@ -125,7 +126,7 @@
                       :disabled="settings.aiProvider !== p.id || ollamaFetching"
                       class="px-2 py-0.5 text-xs rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] text-[var(--text-second)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
                       :title="t('refreshModels')"
-                    >{{ ollamaFetching ? '…' : '↺' }}</button>
+                    ><ArrowPathIcon class="w-3.5 h-3.5" :class="ollamaFetching ? 'animate-spin' : ''" /></button>
                   </div>
                   <p v-if="ollamaFetchError" class="text-xs text-[var(--color-danger)]">{{ ollamaFetchError }}</p>
                 </div>
@@ -184,8 +185,8 @@
               {{ getLabel(plugin.label, settings.language) }}
             </span>
 
-            <button @click="openEditor(idx)" class="text-xs text-[var(--text-muted)] hover:text-[var(--text-second)] transition-colors px-1" :title="t('edit')">✎</button>
-            <button @click="deletePlugin(idx)" class="text-xs text-[var(--text-muted)] hover:text-[var(--color-danger)] transition-colors px-1" :title="t('delete')">✕</button>
+            <button @click="openEditor(idx)" class="text-xs text-[var(--text-muted)] hover:text-[var(--text-second)] transition-colors px-1" :title="t('edit')"><PencilIcon class="w-3.5 h-3.5" /></button>
+            <button @click="deletePlugin(idx)" class="text-xs text-[var(--text-muted)] hover:text-[var(--color-danger)] transition-colors px-1" :title="t('delete')"><XMarkIcon class="w-3.5 h-3.5" /></button>
           </div>
 
           <p v-if="!settings.plugins.length" class="text-xs text-[var(--text-faint)] italic">
@@ -213,7 +214,7 @@
               class="flex items-center gap-2 bg-[var(--bg-deep)] border border-[var(--border)] rounded-lg px-3 py-2"
             >
               <span class="text-xs text-[var(--text-primary)] flex-1 truncate font-medium">{{ s.name }}</span>
-              <span v-if="s.id === current?.id" class="text-xs text-[#6366f1] font-semibold shrink-0">✓</span>
+              <CheckIcon v-if="s.id === current?.id" class="w-3.5 h-3.5 text-[#6366f1] shrink-0" />
 
               <!-- Switch to session (non-current only) -->
               <button
@@ -221,28 +222,28 @@
                 @click="openSwitchModal(s.id, s.name)"
                 class="text-xs text-[var(--text-muted)] hover:text-[#6366f1] transition-colors px-1"
                 :title="t('switchSession')"
-              >⇄</button>
+              ><ArrowsRightLeftIcon class="w-3.5 h-3.5" /></button>
 
               <!-- Rename -->
               <button
                 @click="openRenameModal(s.id, s.name)"
                 class="text-xs text-[var(--text-muted)] hover:text-[var(--text-second)] transition-colors px-1"
                 :title="t('renameSession')"
-              >✎</button>
+              ><PencilIcon class="w-3.5 h-3.5" /></button>
 
               <!-- Change password (all sessions) -->
               <button
                 @click="openChangePasswordModal(s.id)"
                 class="text-xs text-[var(--text-muted)] hover:text-[var(--text-second)] transition-colors px-1"
                 :title="t('sessionChangePassword')"
-              >🔑</button>
+              ><KeyIcon class="w-3.5 h-3.5" /></button>
 
               <!-- Delete (all sessions) -->
               <button
                 @click="doDeleteSession(s.id)"
                 class="text-xs text-[var(--text-muted)] hover:text-[var(--color-danger)] transition-colors px-1"
                 :title="t('deleteSession')"
-              >✕</button>
+              ><XMarkIcon class="w-3.5 h-3.5" /></button>
             </div>
           </div>
 
@@ -250,8 +251,8 @@
           <p v-if="sessionActionError" class="text-xs text-[var(--color-danger)]">{{ sessionActionError }}</p>
 
           <!-- New session button -->
-          <button @click="openNewSessionModal" class="btn-primary text-xs px-3 py-1.5 self-start">
-            + {{ t('addSession') }}
+          <button @click="openNewSessionModal" class="btn-primary text-xs px-3 py-1.5 self-start flex items-center gap-1.5">
+            <PlusIcon class="w-3.5 h-3.5" />{{ t('addSession') }}
           </button>
         </div>
       </template>
@@ -294,8 +295,8 @@
             <button
               @click="factoryReset"
               class="btn-secondary text-xs px-3 py-1.5 self-start text-[var(--color-danger)] hover:text-[var(--color-danger-hover)]"
-            >↺ {{ t('factoryReset') }}</button>
-            <p v-if="factoryResetDone" class="text-xs text-[var(--color-success)]">✓ {{ t('applied') }}</p>
+            ><span class="flex items-center gap-1.5"><ArrowPathIcon class="w-3.5 h-3.5" />{{ t('factoryReset') }}</span></button>
+            <p v-if="factoryResetDone" class="flex items-center gap-1 text-xs text-[var(--color-success)]"><CheckIcon class="w-3.5 h-3.5" />{{ t('applied') }}</p>
           </div>
 
           <!-- Update (placeholder) -->
@@ -305,7 +306,7 @@
               @click="checkUpdate"
               :disabled="updateChecking"
               class="btn-primary text-xs px-3 py-1.5 self-start disabled:opacity-50"
-            >{{ updateChecking ? '…' : t('checkUpdate') }}</button>
+            ><ArrowPathIcon v-if="updateChecking" class="w-3.5 h-3.5 animate-spin" /><span v-else>{{ t('checkUpdate') }}</span></button>
             <p v-if="updateMsg" class="text-xs text-[var(--text-second)]">{{ updateMsg }}</p>
           </div>
         </div>
@@ -325,7 +326,7 @@
         <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[480px] shadow-2xl flex flex-col gap-3">
           <div class="flex items-center justify-between">
             <span class="text-sm font-semibold text-[var(--text-primary)]">{{ t('editPlugin') }}</span>
-            <button @click="closeEditor" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+            <button @click="closeEditor" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"><XMarkIcon class="w-3.5 h-3.5" /></button>
           </div>
           <textarea v-model="editorJson" rows="14" class="field w-full resize-none font-mono text-xs" />
           <p v-if="editorError" class="text-xs text-[var(--color-danger)]">{{ editorError }}</p>
@@ -349,7 +350,7 @@
         <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[340px] shadow-2xl flex flex-col gap-3">
           <div class="flex items-center justify-between">
             <span class="text-sm font-semibold text-[var(--text-primary)]">{{ t('export') }}</span>
-            <button @click="showExportModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+            <button @click="showExportModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"><XMarkIcon class="w-3.5 h-3.5" /></button>
           </div>
           <p class="text-xs text-[var(--text-muted)]">{{ t('exportEncryptedDesc') }}</p>
           <div class="flex flex-col gap-1">
@@ -381,7 +382,7 @@
         <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[340px] shadow-2xl flex flex-col gap-3">
           <div class="flex items-center justify-between">
             <span class="text-sm font-semibold text-[var(--text-primary)]">{{ t('import') }}</span>
-            <button @click="showImportModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+            <button @click="showImportModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"><XMarkIcon class="w-3.5 h-3.5" /></button>
           </div>
           <div class="flex flex-col gap-1">
             <label class="text-xs text-[var(--text-muted)]">{{ t('exportPassword') }}</label>
@@ -404,7 +405,7 @@
         <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[320px] shadow-2xl flex flex-col gap-3">
           <div class="flex items-center justify-between">
             <span class="text-sm font-semibold text-[var(--text-primary)]">{{ t('switchSession') }}: <span class="text-[#6366f1]">{{ switchTargetName }}</span></span>
-            <button @click="showSwitchModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+            <button @click="showSwitchModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"><XMarkIcon class="w-3.5 h-3.5" /></button>
           </div>
           <input v-model="switchPw" type="password" :placeholder="t('password')" class="field" @keyup.enter="doSwitch" autocomplete="current-password" />
           <p v-if="switchError" class="text-xs text-[var(--color-danger)]">{{ switchError }}</p>
@@ -428,7 +429,7 @@
         <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[340px] shadow-2xl flex flex-col gap-3">
           <div class="flex items-center justify-between">
             <span class="text-sm font-semibold text-[var(--text-primary)]">{{ t('addSession') }}</span>
-            <button @click="showNewSessionModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+            <button @click="showNewSessionModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"><XMarkIcon class="w-3.5 h-3.5" /></button>
           </div>
           <div class="flex flex-col gap-1">
             <label class="text-xs text-[var(--text-muted)]">{{ t('sessionName') }}</label>
@@ -463,7 +464,7 @@
         <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[340px] shadow-2xl flex flex-col gap-3">
           <div class="flex items-center justify-between">
             <span class="text-sm font-semibold text-[var(--text-primary)]">{{ t('renameSession') }}</span>
-            <button @click="showRenameModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+            <button @click="showRenameModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"><XMarkIcon class="w-3.5 h-3.5" /></button>
           </div>
           <div class="flex flex-col gap-1">
             <label class="text-xs text-[var(--text-muted)]">{{ t('newSessionName') }}</label>
@@ -490,7 +491,7 @@
         <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[340px] shadow-2xl flex flex-col gap-3">
           <div class="flex items-center justify-between">
             <span class="text-sm font-semibold text-[var(--text-primary)]">{{ t('sessionChangePassword') }}</span>
-            <button @click="showChangePwModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+            <button @click="showChangePwModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"><XMarkIcon class="w-3.5 h-3.5" /></button>
           </div>
           <template v-if="!changePwDone">
             <div class="flex flex-col gap-1">
@@ -533,7 +534,7 @@
         <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[340px] shadow-2xl flex flex-col gap-3">
           <div class="flex items-center justify-between">
             <span class="text-sm font-semibold text-[var(--color-danger)]">{{ t('deleteSession') }}</span>
-            <button @click="showConfirmDeleteModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+            <button @click="showConfirmDeleteModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"><XMarkIcon class="w-3.5 h-3.5" /></button>
           </div>
           <p class="text-sm text-[var(--text-primary)]">{{ confirmDeleteMsg }}</p>
           <div class="flex justify-end gap-2">
@@ -548,6 +549,10 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import {
+  XMarkIcon, ArrowPathIcon, ArrowsRightLeftIcon,
+  PencilIcon, KeyIcon, CheckIcon, MoonIcon, SunIcon, PlusIcon,
+} from '@heroicons/vue/24/outline'
 import { useSettings } from '../composables/useSettings'
 import { useSessions } from '../composables/useSessions'
 import { useI18n } from '../composables/useI18n'

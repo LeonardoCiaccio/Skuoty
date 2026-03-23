@@ -36,7 +36,7 @@
             <span class="text-sm font-semibold text-[var(--text-primary)]">
               {{ getLabel(activePlugin.label, settings.language) }}
             </span>
-            <button @click="closePopup" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
+            <button @click="closePopup" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"><XMarkIcon class="w-3.5 h-3.5" /></button>
           </div>
 
           <!-- Options dropdown (only when options is an array) -->
@@ -76,6 +76,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { XMarkIcon } from '@heroicons/vue/24/outline'
 import { useSettings } from '../composables/useSettings'
 import { useI18n } from '../composables/useI18n'
 import { runPlugin, AIError } from '../composables/useAI'
