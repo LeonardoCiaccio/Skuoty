@@ -15,6 +15,7 @@ export const IPC = {
   SESSION_READ:       'sessions:read',
   SESSION_WRITE:      'sessions:write',
   SESSION_DELETE:     'sessions:delete',
+  OPEN_EXTERNAL:      'shell:openExternal',
 } as const
 
 // ─── i18n ──────────────────────────────────────────────────────────────────────

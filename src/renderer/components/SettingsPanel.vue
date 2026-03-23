@@ -299,15 +299,22 @@
             <p v-if="factoryResetDone" class="flex items-center gap-1 text-xs text-[var(--color-success)]"><CheckIcon class="w-3.5 h-3.5" />{{ t('applied') }}</p>
           </div>
 
-          <!-- Update (placeholder) -->
+          <!-- Update -->
           <div class="flex flex-col gap-2 border-t border-[var(--border)] pt-4">
             <p class="text-xs text-[var(--text-muted)]">{{ t('updateDesc') }}</p>
             <button
               @click="checkUpdate"
               :disabled="updateChecking"
-              class="btn-primary text-xs px-3 py-1.5 self-start disabled:opacity-50"
+              class="btn-primary text-xs px-3 py-1.5 self-start disabled:opacity-50 flex items-center gap-1.5"
             ><ArrowPathIcon v-if="updateChecking" class="w-3.5 h-3.5 animate-spin" /><span v-else>{{ t('checkUpdate') }}</span></button>
-            <p v-if="updateMsg" class="text-xs text-[var(--text-second)]">{{ updateMsg }}</p>
+            <p v-if="updateMsg" :class="['text-xs', updateAvailableVersion ? 'text-[var(--color-success)]' : updateError ? 'text-[var(--color-danger)]' : 'text-[var(--text-second)]']">{{ updateMsg }}</p>
+            <button
+              v-if="updateAvailableVersion"
+              @click="openReleasePage"
+              class="btn-primary text-xs px-3 py-1.5 self-start flex items-center gap-1.5"
+            >
+              <ArrowDownTrayIcon class="w-3.5 h-3.5" />{{ t('downloadUpdate') }}
+            </button>
           </div>
         </div>
       </template>
@@ -597,7 +604,7 @@
 import { ref, watch } from 'vue'
 import {
   XMarkIcon, ArrowPathIcon, ArrowsRightLeftIcon,
-  PencilIcon, KeyIcon, CheckIcon, MoonIcon, SunIcon, PlusIcon,
+  PencilIcon, KeyIcon, CheckIcon, MoonIcon, SunIcon, PlusIcon, ArrowDownTrayIcon,
 } from '@heroicons/vue/24/outline'
 import { useSettings } from '../composables/useSettings'
 import { useSessions } from '../composables/useSessions'
@@ -1019,6 +1026,11 @@ const factoryResetDone        = ref(false)
 const showConfirmFactoryReset = ref(false)
 const updateChecking          = ref(false)
 const updateMsg               = ref('')
+const updateAvailableVersion  = ref('')
+const updateError             = ref(false)
+
+const RELEASES_URL = 'https://github.com/LeonardoCiaccio/Skuoty/releases/latest'
+const GITHUB_API   = 'https://api.github.com/repos/LeonardoCiaccio/Skuoty/releases/latest'
 
 function openFactoryResetModal() {
   showConfirmFactoryReset.value = true
@@ -1032,12 +1044,33 @@ function factoryReset() {
   setTimeout(() => { factoryResetDone.value = false }, 2000)
 }
 
+function openReleasePage() {
+  window.skuoty.openExternal(RELEASES_URL)
+}
+
 async function checkUpdate() {
   updateChecking.value = true
   updateMsg.value = ''
-  await new Promise(r => setTimeout(r, 1200))
-  updateChecking.value = false
-  updateMsg.value = t.value('upToDate')
+  updateAvailableVersion.value = ''
+  updateError.value = false
+  try {
+    const res = await fetch(GITHUB_API, { headers: { Accept: 'application/vnd.github+json' } })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const data = await res.json() as { tag_name: string }
+    const latest  = data.tag_name.replace(/^v/, '')
+    const current = __APP_VERSION__
+    if (latest === current) {
+      updateMsg.value = t.value('upToDate')
+    } else {
+      updateAvailableVersion.value = latest
+      updateMsg.value = t.value('updateAvailable').replace('{version}', `v${latest}`)
+    }
+  } catch {
+    updateError.value = true
+    updateMsg.value = t.value('updateError')
+  } finally {
+    updateChecking.value = false
+  }
 }
 
 // ── Plugin validation ─────────────────────────────────────────────────────────

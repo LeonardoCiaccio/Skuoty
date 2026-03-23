@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, clipboard, screen, Tray, Menu, nativeImage, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, clipboard, screen, Tray, Menu, nativeImage, dialog, shell } from 'electron'
 import { spawn, spawnSync } from 'child_process'
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, unlinkSync, existsSync } from 'fs'
 import { tmpdir } from 'os'
@@ -332,6 +332,13 @@ function setupIPC() {
     ensureSessionsDir()
     const p = safeSessionPath(id)
     if (p && existsSync(p)) unlinkSync(p)
+  })
+
+  ipcMain.on(IPC.OPEN_EXTERNAL, (_e, url: string) => {
+    // Only allow https URLs to prevent arbitrary protocol execution
+    if (typeof url === 'string' && url.startsWith('https://')) {
+      shell.openExternal(url)
+    }
   })
 
   ipcMain.handle(IPC.IMPORT_FILE, async () => {

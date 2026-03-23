@@ -19,6 +19,7 @@ declare global {
       setLanguage:    (lang: string) => void
       exportToFile:   (json: string) => Promise<boolean>
       importFromFile: () => Promise<string | null>
+      openExternal:   (url: string) => void
       sessions: {
         list:   () => Promise<{ id: string; name: string; created: number; modified: number }[]>
         read:   (id: string) => Promise<string | null>
