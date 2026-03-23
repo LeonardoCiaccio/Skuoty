@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/skuoty.png" alt="Skuoty Logo" width="96" />
+  <img src="assets/skuoty-no-bg.png" alt="Skuoty Logo" width="96" />
   <h1>Skuoty</h1>
   <p><strong>AI-powered text processor triggered by a double Ctrl+C</strong></p>
 
@@ -12,10 +12,7 @@
 
   <br />
 
-  <!-- DEMO GIF PLACEHOLDER -->
-  <!-- Place your demo GIF at: assets/demo.gif -->
-  <!-- Then uncomment the line below -->
-  <!-- <img src="assets/demo.gif" alt="Skuoty in action" width="680" /> -->
+  <img src="assets/demo.gif" alt="Skuoty in action" width="680" />
 
   <br />
 </div>
