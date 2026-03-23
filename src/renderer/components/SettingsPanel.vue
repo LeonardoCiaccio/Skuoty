@@ -492,24 +492,31 @@
             <span class="text-sm font-semibold text-[var(--text-primary)]">{{ t('sessionChangePassword') }}</span>
             <button @click="showChangePwModal = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">✕</button>
           </div>
-          <div class="flex flex-col gap-1">
-            <label class="text-xs text-[var(--text-muted)]">{{ t('oldPassword') }}</label>
-            <input v-model="changePwOld" type="password" class="field" autocomplete="current-password" />
-          </div>
-          <div class="flex flex-col gap-1">
-            <label class="text-xs text-[var(--text-muted)]">{{ t('newPassword') }}</label>
-            <input v-model="changePwNew" type="password" class="field" autocomplete="new-password" />
-          </div>
-          <div class="flex flex-col gap-1">
-            <label class="text-xs text-[var(--text-muted)]">{{ t('confirmPassword') }}</label>
-            <input v-model="changePwConfirm" type="password" class="field" autocomplete="new-password" />
-          </div>
-          <p v-if="changePwError" class="text-xs text-[var(--color-danger)]">{{ changePwError }}</p>
-          <p v-if="changePwDone" class="text-xs text-[var(--color-success)]">{{ t('passwordChanged') }}</p>
-          <div class="flex justify-end gap-2">
-            <button @click="showChangePwModal = false" class="btn-secondary text-xs px-3 py-1.5">{{ t('cancel') }}</button>
-            <button @click="doChangePassword" :disabled="changePwBusy" class="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">{{ t('save') }}</button>
-          </div>
+          <template v-if="!changePwDone">
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-[var(--text-muted)]">{{ t('oldPassword') }}</label>
+              <input v-model="changePwOld" type="password" class="field" autocomplete="current-password" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-[var(--text-muted)]">{{ t('newPassword') }}</label>
+              <input v-model="changePwNew" type="password" class="field" autocomplete="new-password" />
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="text-xs text-[var(--text-muted)]">{{ t('confirmPassword') }}</label>
+              <input v-model="changePwConfirm" type="password" class="field" autocomplete="new-password" />
+            </div>
+            <p v-if="changePwError" class="text-xs text-[var(--color-danger)]">{{ changePwError }}</p>
+            <div class="flex justify-end gap-2">
+              <button @click="showChangePwModal = false" class="btn-secondary text-xs px-3 py-1.5">{{ t('cancel') }}</button>
+              <button @click="doChangePassword" :disabled="changePwBusy" class="btn-primary text-xs px-3 py-1.5 disabled:opacity-50">{{ t('save') }}</button>
+            </div>
+          </template>
+          <template v-else>
+            <p class="text-sm text-[var(--color-success)]">{{ t('passwordChanged') }}</p>
+            <div class="flex justify-end">
+              <button @click="showChangePwModal = false" class="btn-primary text-xs px-3 py-1.5">{{ t('close') }}</button>
+            </div>
+          </template>
         </div>
       </div>
     </Transition>
