@@ -18,7 +18,7 @@
     "dist": "npm run build && electron-builder",
     "dist:win": "npm run build && electron-builder --win",
     "dist:mac": "npm run build && electron-builder --mac",
-    "dist:linux": "npm run build && electron-builder --linux",
+    "dist:linux": "npm run build && scripts\\dist-linux.bat",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.main.json --noEmit"
   },
   "keywords": [
@@ -27,7 +27,7 @@
     "clipboard",
     "translation"
   ],
-  "author": "",
+  "author": {"name": "Leonardo Ciaccio", "email": "leonardo@skuoty.app"},
   "license": "MIT",
   "devDependencies": {
     "@electron/rebuild": "^3.6.0",
