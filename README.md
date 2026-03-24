@@ -8,6 +8,7 @@
     <a href="https://github.com/LeonardoCiaccio/Skuoty/blob/main/LICENSE"><img src="https://img.shields.io/github/license/LeonardoCiaccio/Skuoty?style=flat-square&color=6366f1&cacheSeconds=0" alt="License" /></a>
     <a href="https://github.com/LeonardoCiaccio/Skuoty/actions"><img src="https://img.shields.io/github/actions/workflow/status/LeonardoCiaccio/Skuoty/build.yml?style=flat-square&color=6366f1" alt="Build Status" /></a>
     <a href="https://skuoty.com"><img src="https://img.shields.io/badge/website-skuoty.com-6366f1?style=flat-square" alt="Website" /></a>
+    <a href="https://skuoty.com/changelog"><img src="https://img.shields.io/badge/changelog-skuoty.com-6366f1?style=flat-square" alt="Changelog" /></a>
   </p>
 
   <br />
