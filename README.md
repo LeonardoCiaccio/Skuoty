@@ -119,22 +119,13 @@ Plugins are JSON objects that define a text transformation task. They are fully 
 
 ### Structure
 
-```json
-{
-  "name": "my-plugin",
-  "label": [{ "en": "My Plugin", "it": "Il Mio Plugin" }],
-  "prompt": "Transform the following text: {{context}}",
-  "options": "fixed value",
-  "enabled": true
-}
-```
-
 | Field | Type | Description |
 |-------|------|-------------|
 | `name` | `string` | Unique internal identifier |
 | `label` | `{ [lang]: string }[]` | Localized display name |
-| `prompt` | `string` | AI prompt template; use `{{context}}` for the selected text and `{{option}}` for the selected option |
-| `options` | `string \| PluginOption[]` | Static string or dropdown options array |
+| `prompt` | `string` | AI prompt template; use `{{context}}` for the selected text and `{{option}}` for the selected option value |
+| `options` | `string` | Single static value — no dropdown shown, value is passed directly to `{{option}}` |
+| `options` | `PluginOption[]` | Array of choices — renders a dropdown in the toolbar; each item has `label` (localized) and `value` |
 | `enabled` | `boolean` | Whether the plugin is shown in the toolbar |
 
 ### Single-action example (no dropdown)
@@ -159,10 +150,14 @@ When `options` is an array, a dropdown is shown in the toolbar and the selected 
 {
   "name": "translator",
   "label": [{ "en": "Translate", "it": "Traduci" }],
-  "prompt": "Translate the following text to {{option}}: {{context}}",
+  "prompt": "Translate the following text to {{option}}. Return only the translated text:\n\n{{context}}",
   "options": [
-    { "label": [{ "en": "English" }], "value": "English" },
-    { "label": [{ "en": "Italian" }], "value": "Italian" }
+    { "label": [{ "en": "English",    "it": "Inglese"    }], "value": "English"    },
+    { "label": [{ "en": "Italian",    "it": "Italiano"   }], "value": "Italian"    },
+    { "label": [{ "en": "Spanish",    "it": "Spagnolo"   }], "value": "Spanish"    },
+    { "label": [{ "en": "French",     "it": "Francese"   }], "value": "French"     },
+    { "label": [{ "en": "German",     "it": "Tedesco"    }], "value": "German"     },
+    { "label": [{ "en": "Portuguese", "it": "Portoghese" }], "value": "Portuguese" }
   ],
   "enabled": true
 }
