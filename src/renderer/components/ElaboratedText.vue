@@ -68,6 +68,8 @@ const wordCount = computed(() => props.modelValue.trim() ? props.modelValue.trim
 function copy() {
   navigator.clipboard.writeText(props.modelValue).then(() => {
     emit('copy-done')
+  }).catch((err: unknown) => {
+    console.error('[ElaboratedText] clipboard write failed:', err)
   })
 }
 </script>

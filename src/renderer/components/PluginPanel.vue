@@ -126,7 +126,7 @@ async function runDirect(plugin: SkuotyPlugin) {
     const result = await runPlugin(plugin, plugin.options as string, context.value, settings.value)
     emit('result', result)
   } catch (e: unknown) {
-    // errors on direct-run are silently ignored for now (no popup to show them)
+    console.error('[PluginPanel] direct run failed for plugin "%s":', plugin.name, e)
   } finally {
     runningDirect.value = ''
   }

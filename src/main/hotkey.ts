@@ -1,7 +1,8 @@
 import { clipboard } from 'electron'
 import { uIOhook, UiohookKey } from 'uiohook-napi'
 
-const DOUBLE_PRESS_WINDOW_MS = 600
+const DOUBLE_PRESS_THRESHOLD_MS = 600
+const CLIPBOARD_CAPTURE_DELAY_MS = 80
 
 let lastPressTime = 0
 let modifierDown  = false
@@ -32,11 +33,11 @@ export function setupHotkey(onCapture: (text: string) => void, accelerator = 'Ct
       const delta = now - lastPressTime
       lastPressTime = now
 
-      if (delta < DOUBLE_PRESS_WINDOW_MS && delta > 0) {
+      if (delta < DOUBLE_PRESS_THRESHOLD_MS && delta > 0) {
         setTimeout(() => {
           const text = clipboard.readText().trim()
           if (text.length > 0) onCapture(text)
-        }, 80)
+        }, CLIPBOARD_CAPTURE_DELAY_MS)
       }
     }
   })

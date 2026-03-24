@@ -1186,7 +1186,9 @@ function validatePlugin(raw: string): SkuotyPlugin | null {
     if (typeof p.name !== 'string' || !p.name) return null
     if (!Array.isArray(p.label)) return null
     if (!p.label.some((l: unknown) => typeof l === 'object' && l !== null && typeof (l as Record<string, string>)['en'] === 'string')) return null
+    if (!p.label.every((l: unknown) => typeof l === 'object' && l !== null && Object.values(l as Record<string, unknown>).some(v => typeof v === 'string'))) return null
     if (typeof p.options !== 'string' && !Array.isArray(p.options)) return null
+    if (Array.isArray(p.options) && !p.options.every((o: unknown) => o && typeof o === 'object' && Array.isArray((o as Record<string, unknown>).label) && typeof (o as Record<string, unknown>).value === 'string')) return null
     if (typeof p.prompt !== 'string' || !p.prompt) return null
     return { name: p.name, label: p.label as SkuotyPlugin['label'], options: p.options as SkuotyPlugin['options'], prompt: p.prompt, enabled: p.enabled !== false }
   } catch { return null }

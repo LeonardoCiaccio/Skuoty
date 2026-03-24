@@ -7,6 +7,11 @@ import { setupStore } from './store'
 import { setupHotkey } from './hotkey'
 import { IPC } from '../shared/types'
 
+const SUPPORTED_LANGUAGES = ['en', 'it', 'es', 'fr', 'de'] as const
+
+const PASTE_BACK_DELAY_MS = 200
+const PS_PASTE_TIMEOUT_MS = 4000
+
 let SESSIONS_DIR = ''
 
 function ensureSessionsDir() {
@@ -139,7 +144,7 @@ function simulatePaste() {
   if (targetHwnd === '0') return
   spawnSync('powershell.exe', [
     '-NoProfile', '-WindowStyle', 'Hidden', '-File', PS_PASTE, '-Hwnd', targetHwnd,
-  ], { timeout: 4000 })
+  ], { timeout: PS_PASTE_TIMEOUT_MS })
 }
 
 // ─── Tray ─────────────────────────────────────────────────────────────────────
@@ -275,7 +280,7 @@ function setupIPC() {
     if (typeof text !== 'string') return
     clipboard.writeText(text)
     mainWindow?.hide()
-    setTimeout(simulatePaste, 200)
+    setTimeout(simulatePaste, PASTE_BACK_DELAY_MS)
   })
 
   ipcMain.handle(IPC.SETTINGS_GET, () => setupStore().get('settings'))
@@ -297,8 +302,7 @@ function setupIPC() {
   })
 
   ipcMain.on(IPC.LANGUAGE_CHANGED, (_e, lang: string) => {
-    const SUPPORTED = ['en', 'it', 'es', 'fr', 'de']
-    if (typeof lang !== 'string' || !SUPPORTED.includes(lang)) return
+    if (typeof lang !== 'string' || !(SUPPORTED_LANGUAGES as readonly string[]).includes(lang)) return
     currentLang = lang
     if (tray) tray.setContextMenu(buildTrayMenu())
   })
@@ -414,7 +418,10 @@ if (!gotLock) {
 
 app.whenReady().then(() => {
   app.on('window-all-closed', () => { /* stay in tray */ })
-  app.on('before-quit', () => { isQuitting = true })
+  app.on('before-quit', () => {
+    isQuitting = true
+    daemon?.kill()
+  })
 
   if (process.platform === 'win32') {
     writePasteScripts()
@@ -423,8 +430,7 @@ app.whenReady().then(() => {
 
   // Splash uses dark theme; language from system locale if available
   const sysLang = app.getLocale().split('-')[0]
-  const SUPPORTED = ['en', 'it', 'es', 'fr', 'de']
-  const splashLang = SUPPORTED.includes(sysLang) ? sysLang : 'en'
+  const splashLang = (SUPPORTED_LANGUAGES as readonly string[]).includes(sysLang) ? sysLang : 'en'
   createSplash(splashLang, 'dark')
 
   createWindow()
