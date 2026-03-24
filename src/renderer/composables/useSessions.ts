@@ -70,6 +70,12 @@ export function useSessions() {
     return settings
   }
 
+  function initWithKey(id: string, name: string, keyBase64: string): void {
+    _keyBytes       = unb64(keyBase64) as unknown as Uint8Array<ArrayBuffer>
+    _current.value  = { id, name, created: 0, modified: 0 }
+    _unlocked.value = true
+  }
+
   async function save(settings: AppSettings): Promise<void> {
     if (!_current.value || !_keyBytes) return
     const raw = await window.skuoty.sessions.read(_current.value.id) as string | null
@@ -120,6 +126,6 @@ export function useSessions() {
     sessions: _sessions,
     current:  _current,
     unlocked: _unlocked,
-    list, create, open, save, rename, changePassword, deleteSession, logout,
+    list, create, open, save, initWithKey, rename, changePassword, deleteSession, logout,
   }
 }

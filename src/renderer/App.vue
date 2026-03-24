@@ -82,7 +82,7 @@ import { useSessions }  from './composables/useSessions'
 import type { AppSettings, AIProvider } from '../shared/types'
 
 const { settings, load } = useSettings()
-const { save: saveSession, logout, current: currentSession } = useSessions()
+const { save: saveSession, logout, current: currentSession, initWithKey } = useSessions()
 
 const appVersion = __APP_VERSION__
 
@@ -155,9 +155,9 @@ onMounted(() => {
     try {
       // Cancel any pending save before loading new session data
       if (saveTimer) { clearTimeout(saveTimer); saveTimer = null }
-      const payload = JSON.parse(json) as { id: string; name: string; settings: AppSettings }
+      const payload = JSON.parse(json) as { id: string; name: string; settings: AppSettings; key: string }
       load(payload.settings)
-      currentSession.value = { id: payload.id, name: payload.name, created: 0, modified: 0 }
+      initWithKey(payload.id, payload.name, payload.key)
     } catch {
       console.error('[skuoty] Failed to parse session payload')
     }
