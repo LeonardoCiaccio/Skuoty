@@ -159,12 +159,15 @@
           <p class="text-xs text-[var(--text-muted)] mb-2">{{ t('loadPlugin') }}</p>
           <textarea
             v-model="loadJson"
-            rows="5"
+            rows="8"
             placeholder='{&#10;  "name": "my-plugin",&#10;  "label": [{"en":"My Plugin"}],&#10;  "options": "...",&#10;  "prompt": "{{option}} {{context}}"&#10;}'
-            class="field w-full resize-none font-mono text-xs"
+            class="field w-full resize-y font-mono text-xs"
           />
           <p v-if="loadError" class="text-xs text-[var(--color-danger)] mt-1">{{ loadError }}</p>
-          <button @click="loadPlugin" class="mt-2 btn-primary text-xs px-3 py-1.5">{{ t('load') }}</button>
+          <div class="mt-2 flex gap-2">
+            <button @click="loadPlugin" class="btn-primary text-xs px-3 py-1.5">{{ t('load') }}</button>
+            <button @click="loadPluginFromFile" class="btn-secondary text-xs px-3 py-1.5">{{ t('loadFromFile') }}</button>
+          </div>
         </div>
 
         <!-- Installed plugins (after) -->
@@ -747,6 +750,13 @@ function confirmDeletePlugin() {
 // ── Load new plugin ───────────────────────────────────────────────────────────
 const loadJson  = ref('')
 const loadError = ref('')
+
+async function loadPluginFromFile() {
+  const content = await window.skuoty.importFromFile()
+  if (!content) return
+  loadJson.value  = content
+  loadError.value = ''
+}
 
 function loadPlugin() {
   loadError.value = ''
