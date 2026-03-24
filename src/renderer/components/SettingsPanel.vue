@@ -14,6 +14,7 @@
       >
         <span v-if="active === s.id" class="absolute left-0 top-0 bottom-0 w-0.5 bg-[#6366f1] rounded-r" />
         {{ s.label[settings.language] ?? s.label['en'] }}
+        <span v-if="s.id === 'info' && updateAvailableVersion" class="absolute inset-y-0 right-3 my-auto w-1.5 h-1.5 rounded-full bg-[#6366f1]" />
       </button>
     </nav>
 
@@ -337,19 +338,28 @@
           <!-- Update -->
           <div class="flex flex-col gap-2 border-t border-[var(--border)] pt-4">
             <p class="text-xs text-[var(--text-muted)]">{{ t('updateDesc') }}</p>
+
+            <!-- Update available -->
+            <div v-if="updateAvailableVersion" class="flex flex-col gap-2">
+              <p class="text-xs text-[var(--color-success)]">{{ t('updateAvailable').replace('{version}', `v${updateAvailableVersion}`) }}</p>
+              <button
+                @click="openReleasePage"
+                class="btn-primary text-xs px-3 py-1.5 self-start flex items-center gap-1.5"
+              ><ArrowDownTrayIcon class="w-3.5 h-3.5" />{{ t('downloadUpdate') }}</button>
+            </div>
+
+            <!-- Checking / error / up to date -->
+            <p v-else-if="updateChecking" class="text-xs text-[var(--text-muted)] flex items-center gap-1.5">
+              <ArrowPathIcon class="w-3.5 h-3.5 animate-spin" />{{ t('checkUpdate') }}…
+            </p>
+            <p v-else-if="updateError" class="text-xs text-[var(--color-danger)]">{{ t('updateError') }}</p>
+            <p v-else class="text-xs text-[var(--text-second)]">{{ t('upToDate') }}</p>
+
             <button
               @click="checkUpdate"
               :disabled="updateChecking"
-              class="btn-primary text-xs px-3 py-1.5 self-start disabled:opacity-50 flex items-center gap-1.5"
-            ><ArrowPathIcon v-if="updateChecking" class="w-3.5 h-3.5 animate-spin" /><span v-else>{{ t('checkUpdate') }}</span></button>
-            <p v-if="updateMsg" :class="['text-xs', updateAvailableVersion ? 'text-[var(--color-success)]' : updateError ? 'text-[var(--color-danger)]' : 'text-[var(--text-second)]']">{{ updateMsg }}</p>
-            <button
-              v-if="updateAvailableVersion"
-              @click="openReleasePage"
-              class="btn-primary text-xs px-3 py-1.5 self-start flex items-center gap-1.5"
-            >
-              <ArrowDownTrayIcon class="w-3.5 h-3.5" />{{ t('downloadUpdate') }}
-            </button>
+              class="btn-secondary text-xs px-3 py-1.5 self-start disabled:opacity-50 flex items-center gap-1.5"
+            ><ArrowPathIcon class="w-3.5 h-3.5" />{{ t('checkUpdate') }}</button>
           </div>
         </div>
       </template>
@@ -664,9 +674,10 @@ import {
   XMarkIcon, ArrowPathIcon, ArrowsRightLeftIcon,
   PencilIcon, KeyIcon, CheckIcon, MoonIcon, SunIcon, PlusIcon, ArrowDownTrayIcon, ArrowUpTrayIcon, QuestionMarkCircleIcon,
 } from '@heroicons/vue/24/outline'
-import { useSettings } from '../composables/useSettings'
-import { useSessions } from '../composables/useSessions'
-import { useI18n } from '../composables/useI18n'
+import { useSettings }    from '../composables/useSettings'
+import { useSessions }    from '../composables/useSessions'
+import { useI18n }        from '../composables/useI18n'
+import { useUpdateCheck } from '../composables/useUpdateCheck'
 import { testProvider, fetchOllamaModels, AIError } from '../composables/useAI'
 import { encryptData, decryptData, isEncryptedBlob } from '../composables/useCrypto'
 import { getLabel, DEFAULT_SETTINGS } from '../../shared/types'
@@ -680,6 +691,7 @@ const { settings, exportSettings, importSettings } = useSettings()
 const { sessions, current, list: listSessions, create: createSession, open: openSession, rename, changePassword, deleteSession, save: saveSession, logout } = useSessions()
 const { load: loadSettings } = useSettings()
 const { t } = useI18n()
+const { updateAvailableVersion, updateChecking, updateError, checkUpdate, openReleasePage } = useUpdateCheck()
 
 const sections = [
   { id: 'general',   label: { en: 'General',   it: 'Generale',   es: 'General',   fr: 'Général',    de: 'Allgemein'  } },
@@ -1129,14 +1141,8 @@ async function doChangePassword() {
 // ── Info / factory reset / update ─────────────────────────────────────────────
 const factoryResetDone        = ref(false)
 const showConfirmFactoryReset = ref(false)
-const updateChecking          = ref(false)
-const updateMsg               = ref('')
-const updateAvailableVersion  = ref('')
-const updateError             = ref(false)
 
-const REPO_URL     = 'https://github.com/LeonardoCiaccio/Skuoty'
-const RELEASES_URL = 'https://github.com/LeonardoCiaccio/Skuoty/releases/latest'
-const GITHUB_API   = 'https://api.github.com/repos/LeonardoCiaccio/Skuoty/releases/latest'
+const REPO_URL = 'https://github.com/LeonardoCiaccio/Skuoty'
 
 function openFactoryResetModal() {
   showConfirmFactoryReset.value = true
@@ -1150,34 +1156,8 @@ function factoryReset() {
   setTimeout(() => { factoryResetDone.value = false }, 2000)
 }
 
-function openPluginDocs()  { window.skuoty.openExternal('https://github.com/LeonardoCiaccio/Skuoty?tab=readme-ov-file#plugin-system') }
-function openRepoPage()    { window.skuoty.openExternal(REPO_URL) }
-function openReleasePage() { window.skuoty.openExternal(RELEASES_URL) }
-
-async function checkUpdate() {
-  updateChecking.value = true
-  updateMsg.value = ''
-  updateAvailableVersion.value = ''
-  updateError.value = false
-  try {
-    const res = await fetch(GITHUB_API, { headers: { Accept: 'application/vnd.github+json' } })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const data = await res.json() as { tag_name: string }
-    const latest  = data.tag_name.replace(/^v/, '')
-    const current = __APP_VERSION__
-    if (latest === current) {
-      updateMsg.value = t.value('upToDate')
-    } else {
-      updateAvailableVersion.value = latest
-      updateMsg.value = t.value('updateAvailable').replace('{version}', `v${latest}`)
-    }
-  } catch {
-    updateError.value = true
-    updateMsg.value = t.value('updateError')
-  } finally {
-    updateChecking.value = false
-  }
-}
+function openPluginDocs() { window.skuoty.openExternal('https://github.com/LeonardoCiaccio/Skuoty?tab=readme-ov-file#plugin-system') }
+function openRepoPage()   { window.skuoty.openExternal(REPO_URL) }
 
 // ── Plugin validation ─────────────────────────────────────────────────────────
 function validatePlugin(raw: string): SkuotyPlugin | null {

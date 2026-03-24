@@ -7,11 +7,12 @@
       <div class="flex gap-1" style="-webkit-app-region: no-drag">
         <button
           @click="showSettings = !showSettings"
-          class="p-1 rounded hover:bg-[var(--bg-element)] text-[var(--text-second)] hover:text-[var(--text-primary)] transition-colors"
+          class="relative p-1 rounded hover:bg-[var(--bg-element)] text-[var(--text-second)] hover:text-[var(--text-primary)] transition-colors"
           title="Settings"
         >
           <ChevronRightIcon v-if="showSettings" class="w-4 h-4" />
           <Cog6ToothIcon v-else class="w-4 h-4" />
+          <span v-if="updateAvailableVersion && !showSettings" class="absolute top-0 right-0 w-1.5 h-1.5 rounded-full bg-[#6366f1]" />
         </button>
       </div>
     </div>
@@ -77,12 +78,14 @@ import TextPreview    from './components/TextPreview.vue'
 import ElaboratedText from './components/ElaboratedText.vue'
 import PluginPanel    from './components/PluginPanel.vue'
 import SettingsPanel  from './components/SettingsPanel.vue'
-import { useSettings }  from './composables/useSettings'
-import { useSessions }  from './composables/useSessions'
+import { useSettings }     from './composables/useSettings'
+import { useSessions }     from './composables/useSessions'
+import { useUpdateCheck }  from './composables/useUpdateCheck'
 import type { AppSettings, AIProvider } from '../shared/types'
 
 const { settings, load } = useSettings()
 const { save: saveSession, logout, current: currentSession, initWithKey } = useSessions()
+const { updateAvailableVersion, checkOnStartup } = useUpdateCheck()
 
 const appVersion = __APP_VERSION__
 
@@ -170,6 +173,7 @@ onMounted(() => {
   })
   window.skuoty.signalReady()
   window.skuoty.setLanguage(settings.value.language)
+  checkOnStartup()
 })
 
 function copyDone() {
