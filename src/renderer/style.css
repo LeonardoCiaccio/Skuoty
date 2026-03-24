@@ -59,15 +59,4 @@ html, body, #app {
 ::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 2px; }
 
 /* ── Textarea resize handle ── */
-::-webkit-resizer {
-  background-image: radial-gradient(circle, var(--text-muted) 1px, transparent 1px),
-                    radial-gradient(circle, var(--text-muted) 1px, transparent 1px),
-                    radial-gradient(circle, var(--text-muted) 1px, transparent 1px),
-                    radial-gradient(circle, var(--text-muted) 1px, transparent 1px),
-                    radial-gradient(circle, var(--text-muted) 1px, transparent 1px),
-                    radial-gradient(circle, var(--text-muted) 1px, transparent 1px);
-  background-size: 3px 3px;
-  background-position: 2px 2px, 5px 2px, 2px 5px, 5px 5px, 8px 5px, 5px 8px;
-  background-repeat: no-repeat;
-  background-color: transparent;
-}
+::-webkit-resizer { display: none; }

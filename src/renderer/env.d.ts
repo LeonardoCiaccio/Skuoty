@@ -19,6 +19,7 @@ declare global {
       showSplash:     () => void
       setLanguage:    (lang: string) => void
       exportToFile:   (json: string) => Promise<boolean>
+      exportPlugin:   (json: string, name: string) => Promise<boolean>
       importFromFile: () => Promise<string | null>
       openExternal:   (url: string) => void
       sessions: {

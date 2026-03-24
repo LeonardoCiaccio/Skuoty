@@ -361,6 +361,21 @@ function setupIPC() {
     }
   })
 
+  ipcMain.handle(IPC.EXPORT_PLUGIN, async (_e, json: string, name: string) => {
+    dialogOpen = true
+    mainWindow?.setAlwaysOnTop(false)
+    const { filePath, canceled } = await dialog.showSaveDialog({
+      title: 'Export Skuoty plugin',
+      defaultPath: `skuoty-plugin-${name}.json`,
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+    })
+    dialogOpen = false
+    mainWindow?.setAlwaysOnTop(true)
+    if (!canceled && filePath) writeFileSync(filePath, json, 'utf-8')
+    mainWindow?.show()
+    return !canceled && !!filePath
+  })
+
   ipcMain.handle(IPC.IMPORT_FILE, async () => {
     dialogOpen = true
     mainWindow?.setAlwaysOnTop(false)

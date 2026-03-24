@@ -156,15 +156,37 @@
 
         <!-- Load new plugin (first) -->
         <div class="mb-4">
-          <p class="text-xs text-[var(--text-muted)] mb-2">{{ t('loadPlugin') }}</p>
-          <textarea
-            v-model="loadJson"
-            rows="8"
-            placeholder='{&#10;  "name": "my-plugin",&#10;  "label": [{"en":"My Plugin"}],&#10;  "options": "...",&#10;  "prompt": "{{option}} {{context}}"&#10;}'
-            class="field w-full resize-y font-mono text-xs"
-          />
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-xs text-[var(--text-muted)]">{{ t('loadPlugin') }}</p>
+            <button
+              @click="openPluginDocs"
+              class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+              title="Help"
+            ><QuestionMarkCircleIcon class="w-5 h-5" /></button>
+          </div>
+          <div class="relative">
+            <textarea
+              ref="pluginTextarea"
+              v-model="loadJson"
+              :style="{ height: pluginTextareaHeight + 'px' }"
+              placeholder='{&#10;  "name": "my-plugin",&#10;  "label": [{"en":"My Plugin"}],&#10;  "options": "...",&#10;  "prompt": "{{option}} {{context}}"&#10;}'
+              class="field w-full resize-none font-mono text-xs"
+            />
+            <button
+              v-if="loadJson.trim()"
+              @click="loadJson = ''; loadError = ''"
+              class="absolute top-1.5 right-1.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors bg-[var(--bg-deep)] rounded p-0.5"
+              title="Clear"
+            ><XMarkIcon class="w-3.5 h-3.5" /></button>
+            <div
+              class="w-full h-2 cursor-ns-resize flex items-center justify-center group"
+              @mousedown="startPluginResize"
+            >
+              <div class="w-8 h-0.5 rounded-full bg-[var(--border)] group-hover:bg-[var(--text-muted)] transition-colors" />
+            </div>
+          </div>
           <p v-if="loadError" class="text-xs text-[var(--color-danger)] mt-1">{{ loadError }}</p>
-          <div class="mt-2 flex gap-2">
+          <div class="mt-2 flex items-center gap-2">
             <button @click="loadPlugin" class="btn-primary text-xs px-3 py-1.5">{{ t('load') }}</button>
             <button @click="loadPluginFromFile" class="btn-secondary text-xs px-3 py-1.5">{{ t('loadFromFile') }}</button>
           </div>
@@ -189,6 +211,7 @@
             </span>
 
             <button @click="openEditor(idx)" class="text-xs text-[var(--text-muted)] hover:text-[var(--text-second)] transition-colors px-1" :title="t('edit')"><PencilIcon class="w-3.5 h-3.5" /></button>
+            <button @click="exportPlugin(idx)" class="text-xs text-[var(--text-muted)] hover:text-[var(--text-second)] transition-colors px-1" :title="t('export')"><ArrowUpTrayIcon class="w-3.5 h-3.5" /></button>
             <button @click="openDeletePluginModal(idx)" class="text-xs text-[var(--text-muted)] hover:text-[var(--color-danger)] transition-colors px-1" :title="t('delete')"><XMarkIcon class="w-3.5 h-3.5" /></button>
           </div>
 
@@ -588,6 +611,29 @@
     </Transition>
   </Teleport>
 
+  <!-- Confirm overwrite plugin modal -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div
+        v-if="showConfirmOverwritePlugin"
+        class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+        @click.self="showConfirmOverwritePlugin = false"
+      >
+        <div class="bg-[var(--bg-base)] border border-[var(--border)] rounded-xl p-5 w-[340px] shadow-2xl flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-semibold text-[var(--color-danger)]">{{ t('overwritePlugin') }}</span>
+            <button @click="showConfirmOverwritePlugin = false" class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"><XMarkIcon class="w-3.5 h-3.5" /></button>
+          </div>
+          <p class="text-sm text-[var(--text-primary)]">{{ t('confirmOverwritePlugin').replace('{name}', pendingOverwritePlugin?.name ?? '') }}</p>
+          <div class="flex justify-end gap-2">
+            <button @click="showConfirmOverwritePlugin = false" class="btn-secondary text-xs px-3 py-1.5">{{ t('cancel') }}</button>
+            <button @click="confirmOverwritePlugin" class="btn-danger text-xs px-3 py-1.5">{{ t('overwrite') }}</button>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
   <!-- Confirm delete session modal -->
   <Teleport to="body">
     <Transition name="fade">
@@ -616,7 +662,7 @@
 import { ref, watch } from 'vue'
 import {
   XMarkIcon, ArrowPathIcon, ArrowsRightLeftIcon,
-  PencilIcon, KeyIcon, CheckIcon, MoonIcon, SunIcon, PlusIcon, ArrowDownTrayIcon,
+  PencilIcon, KeyIcon, CheckIcon, MoonIcon, SunIcon, PlusIcon, ArrowDownTrayIcon, ArrowUpTrayIcon, QuestionMarkCircleIcon,
 } from '@heroicons/vue/24/outline'
 import { useSettings } from '../composables/useSettings'
 import { useSessions } from '../composables/useSessions'
@@ -719,6 +765,11 @@ function openEditor(idx: number) {
   editorError.value = ''
 }
 function closeEditor() { editorIdx.value = null; editorError.value = '' }
+
+async function exportPlugin(idx: number) {
+  const { enabled: _enabled, ...rest } = settings.value.plugins[idx]
+  await window.skuoty.exportPlugin(JSON.stringify(rest, null, 2), rest.name)
+}
 function saveEditor() {
   if (editorIdx.value === null) return
   const v = validatePlugin(editorJson.value)
@@ -748,8 +799,24 @@ function confirmDeletePlugin() {
 }
 
 // ── Load new plugin ───────────────────────────────────────────────────────────
-const loadJson  = ref('')
-const loadError = ref('')
+const loadJson             = ref('')
+const loadError            = ref('')
+const pluginTextarea       = ref<HTMLTextAreaElement | null>(null)
+const pluginTextareaHeight = ref(160)
+
+function startPluginResize(e: MouseEvent) {
+  const startY = e.clientY
+  const startH = pluginTextareaHeight.value
+  const onMove = (ev: MouseEvent) => {
+    pluginTextareaHeight.value = Math.max(80, startH + ev.clientY - startY)
+  }
+  const onUp = () => {
+    window.removeEventListener('mousemove', onMove)
+    window.removeEventListener('mouseup', onUp)
+  }
+  window.addEventListener('mousemove', onMove)
+  window.addEventListener('mouseup', onUp)
+}
 
 async function loadPluginFromFile() {
   const content = await window.skuoty.importFromFile()
@@ -758,13 +825,32 @@ async function loadPluginFromFile() {
   loadError.value = ''
 }
 
+const showConfirmOverwritePlugin = ref(false)
+const pendingOverwritePlugin     = ref<ReturnType<typeof validatePlugin>>(null)
+const pendingOverwriteIdx        = ref(-1)
+
 function loadPlugin() {
   loadError.value = ''
   const v = validatePlugin(loadJson.value)
   if (!v) { loadError.value = 'Invalid plugin. Required: name, label (array with "en" entry), options (string or array), prompt.'; return }
   const idx = settings.value.plugins.findIndex((p) => p.name === v.name)
-  if (idx >= 0) settings.value.plugins[idx] = v
-  else settings.value.plugins.push(v)
+  if (idx >= 0) {
+    pendingOverwritePlugin.value = v
+    pendingOverwriteIdx.value    = idx
+    showConfirmOverwritePlugin.value = true
+    return
+  }
+  settings.value.plugins.push(v)
+  loadJson.value = ''
+}
+
+function confirmOverwritePlugin() {
+  if (pendingOverwritePlugin.value && pendingOverwriteIdx.value >= 0) {
+    settings.value.plugins[pendingOverwriteIdx.value] = pendingOverwritePlugin.value
+  }
+  showConfirmOverwritePlugin.value = false
+  pendingOverwritePlugin.value     = null
+  pendingOverwriteIdx.value        = -1
   loadJson.value = ''
 }
 
@@ -1064,6 +1150,7 @@ function factoryReset() {
   setTimeout(() => { factoryResetDone.value = false }, 2000)
 }
 
+function openPluginDocs()  { window.skuoty.openExternal('https://github.com/LeonardoCiaccio/Skuoty?tab=readme-ov-file#plugin-system') }
 function openRepoPage()    { window.skuoty.openExternal(REPO_URL) }
 function openReleasePage() { window.skuoty.openExternal(RELEASES_URL) }
 

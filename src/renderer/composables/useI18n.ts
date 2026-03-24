@@ -108,6 +108,9 @@ const STRINGS: Record<string, Record<string, string>> = {
     newPassword:          'New password',
     deletePlugin:         'Delete plugin',
     confirmDeletePlugin:  'Delete plugin "{name}"? This action cannot be undone.',
+    overwritePlugin:      'Plugin already exists',
+    confirmOverwritePlugin: 'A plugin named "{name}" is already installed. Do you want to overwrite it?',
+    overwrite:            'Overwrite',
     confirmFactoryReset:  'Reset all settings and plugins to factory defaults? This action cannot be undone.',
   },
   it: {
@@ -213,6 +216,9 @@ const STRINGS: Record<string, Record<string, string>> = {
     newPassword:          'Nuova password',
     deletePlugin:         'Elimina plugin',
     confirmDeletePlugin:  'Eliminare il plugin "{name}"? L\'azione è irreversibile.',
+    overwritePlugin:      'Plugin già esistente',
+    confirmOverwritePlugin: 'Un plugin chiamato "{name}" è già installato. Vuoi sovrascriverlo?',
+    overwrite:            'Sovrascrivi',
     confirmFactoryReset:  'Ripristinare tutte le impostazioni e i plugin ai valori di fabbrica? L\'azione è irreversibile.',
   },
   es: {
@@ -277,6 +283,9 @@ const STRINGS: Record<string, Record<string, string>> = {
     newPassword:          'Nueva contraseña',
     deletePlugin:         'Eliminar plugin',
     confirmDeletePlugin:  '¿Eliminar el plugin "{name}"? Esta acción es irreversible.',
+    overwritePlugin:      'Plugin ya existe',
+    confirmOverwritePlugin: 'Ya hay un plugin llamado "{name}" instalado. ¿Deseas sobreescribirlo?',
+    overwrite:            'Sobreescribir',
     confirmFactoryReset:  '¿Restablecer todos los ajustes y plugins a los valores de fábrica? Esta acción es irreversible.',
   },
   fr: {
@@ -341,6 +350,9 @@ const STRINGS: Record<string, Record<string, string>> = {
     newPassword:          'Nouveau mot de passe',
     deletePlugin:         'Supprimer le plugin',
     confirmDeletePlugin:  'Supprimer le plugin "{name}" ? Cette action est irréversible.',
+    overwritePlugin:      'Plugin déjà existant',
+    confirmOverwritePlugin: 'Un plugin nommé "{name}" est déjà installé. Voulez-vous le remplacer ?',
+    overwrite:            'Remplacer',
     confirmFactoryReset:  'Réinitialiser tous les paramètres et plugins aux valeurs d\'usine ? Cette action est irréversible.',
   },
   de: {
@@ -405,6 +417,9 @@ const STRINGS: Record<string, Record<string, string>> = {
     newPassword:          'Neues Passwort',
     deletePlugin:         'Plugin löschen',
     confirmDeletePlugin:  'Plugin "{name}" löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
+    overwritePlugin:      'Plugin bereits vorhanden',
+    confirmOverwritePlugin: 'Ein Plugin namens "{name}" ist bereits installiert. Möchten Sie es überschreiben?',
+    overwrite:            'Überschreiben',
     confirmFactoryReset:  'Alle Einstellungen und Plugins auf Werksstandard zurücksetzen? Diese Aktion kann nicht rückgängig gemacht werden.',
   },
 }

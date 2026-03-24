@@ -137,7 +137,23 @@ Plugins are JSON objects that define a text transformation task. They are fully 
 | `options` | `string \| PluginOption[]` | Static string or dropdown options array |
 | `enabled` | `boolean` | Whether the plugin is shown in the toolbar |
 
+### Single-action example (no dropdown)
+
+When `options` is a string, no dropdown is shown — the value is passed directly to `{{option}}` in the prompt.
+
+```json
+{
+  "name": "fix-grammar",
+  "label": [{ "en": "Fix Grammar", "it": "Correggi" }],
+  "prompt": "Correct all grammar, spelling and punctuation errors in the text below. Keep the original language and style. Return only the corrected text, no explanations:\n\n{{context}}",
+  "options": "fix all grammar, spelling and punctuation errors",
+  "enabled": true
+}
+```
+
 ### Dropdown options example
+
+When `options` is an array, a dropdown is shown in the toolbar and the selected value is injected as `{{option}}`.
 
 ```json
 {
