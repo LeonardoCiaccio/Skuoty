@@ -131,6 +131,30 @@
                   </div>
                   <p v-if="ollamaFetchError" class="text-xs text-[var(--color-danger)]">{{ ollamaFetchError }}</p>
                 </div>
+                <!-- Temperature -->
+                <div class="flex flex-col gap-0.5">
+                  <div class="flex justify-between">
+                    <label class="text-xs text-[var(--text-muted)]">{{ t('temperature') }}</label>
+                    <span class="text-xs text-[var(--text-second)] font-mono">{{ settings.providers.ollama.temperature.toFixed(1) }}</span>
+                  </div>
+                  <input v-model.number="settings.providers.ollama.temperature" type="range" min="0" max="2" step="0.1" class="w-full accent-[#6366f1]" />
+                  <p class="text-[10px] text-[var(--text-faint)]">{{ t('temperatureHint') }}</p>
+                </div>
+                <!-- Top P -->
+                <div class="flex flex-col gap-0.5">
+                  <div class="flex justify-between">
+                    <label class="text-xs text-[var(--text-muted)]">Top P</label>
+                    <span class="text-xs text-[var(--text-second)] font-mono">{{ settings.providers.ollama.topP.toFixed(2) }}</span>
+                  </div>
+                  <input v-model.number="settings.providers.ollama.topP" type="range" min="0" max="1" step="0.05" class="w-full accent-[#6366f1]" />
+                  <p class="text-[10px] text-[var(--text-faint)]">{{ t('topPHint') }}</p>
+                </div>
+                <!-- Max tokens -->
+                <div class="flex flex-col gap-0.5">
+                  <label class="text-xs text-[var(--text-muted)]">{{ t('maxTokens') }}</label>
+                  <input v-model.number="settings.providers.ollama.maxTokens" type="number" min="64" max="8192" step="64" class="field w-28" />
+                  <p class="text-[10px] text-[var(--text-faint)]">{{ t('maxTokensHint') }}</p>
+                </div>
               </div>
             </template>
 
@@ -144,6 +168,21 @@
                 <div class="flex flex-col gap-0.5">
                   <label class="text-xs text-[var(--text-muted)]">{{ t('model') }}</label>
                   <input v-model="settings.providers[p.id].model" type="text" class="field" :disabled="settings.aiProvider !== p.id" />
+                </div>
+                <!-- Temperature -->
+                <div class="flex flex-col gap-0.5">
+                  <div class="flex justify-between">
+                    <label class="text-xs text-[var(--text-muted)]">{{ t('temperature') }}</label>
+                    <span class="text-xs text-[var(--text-second)] font-mono">{{ (settings.providers[p.id].temperature ?? 0.3).toFixed(1) }}</span>
+                  </div>
+                  <input v-model.number="settings.providers[p.id].temperature" type="range" min="0" max="2" step="0.1" class="w-full accent-[#6366f1]" />
+                  <p class="text-[10px] text-[var(--text-faint)]">{{ t('temperatureHint') }}</p>
+                </div>
+                <!-- Max tokens -->
+                <div class="flex flex-col gap-0.5">
+                  <label class="text-xs text-[var(--text-muted)]">{{ t('maxTokens') }}</label>
+                  <input v-model.number="settings.providers[p.id].maxTokens" type="number" min="64" max="8192" step="64" class="field w-28" />
+                  <p class="text-[10px] text-[var(--text-faint)]">{{ t('maxTokensHint') }}</p>
                 </div>
               </div>
             </template>

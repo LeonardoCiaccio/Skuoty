@@ -60,7 +60,34 @@
         </Teleport>
       </div>
 
-      <ElaboratedText v-model="elaboratedText" :has-target="hasTarget" @paste-back="pasteBack" @copy-done="copyDone" @reset="resetSession" />
+      <ElaboratedText v-model="elaboratedText" :has-target="hasTarget" @paste-back="pasteBack" @copy-done="copyDone" @reset="resetSession" @refine="showRefine = true" />
+
+      <!-- Refine modal -->
+      <Teleport to="body">
+        <div v-if="showRefine" class="fixed inset-0 z-50 flex items-end justify-center p-3" @click.self="showRefine = false">
+          <div class="w-full bg-[var(--bg-deep)] border border-[var(--border)] rounded-xl shadow-2xl p-4 flex flex-col gap-3">
+            <p class="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Refine</p>
+            <textarea
+              v-model="refineInstruction"
+              :placeholder="t('refinePlaceholder')"
+              rows="3"
+              class="w-full bg-[var(--bg-base)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] resize-none focus:outline-none focus:border-[#6366f1] transition-colors placeholder-[var(--text-faint)]"
+              @keydown.enter.ctrl="submitRefine"
+              @keydown.enter.meta="submitRefine"
+              spellcheck="false"
+              autofocus
+            />
+            <p v-if="refineError" class="text-xs text-[var(--color-danger)]">{{ refineError }}</p>
+            <div class="flex gap-2 justify-end">
+              <button @click="showRefine = false" class="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text-second)] hover:text-[var(--text-primary)] transition-colors">{{ t('cancel') }}</button>
+              <button @click="submitRefine" :disabled="!refineInstruction.trim() || refineLoading" class="text-xs px-3 py-1.5 rounded-lg bg-[#6366f1] hover:bg-[#4f46e5] text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5">
+                <ArrowPathIcon v-if="refineLoading" class="w-3 h-3 animate-spin" />
+                {{ t('refineSubmit') }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Teleport>
       <PluginPanel
         :selection-text="selectionText"
         :elaborated-text="elaboratedText"
@@ -73,17 +100,20 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { Cog6ToothIcon, ChevronRightIcon, ChevronDownIcon } from '@heroicons/vue/24/outline'
+import { Cog6ToothIcon, ChevronRightIcon, ChevronDownIcon, ArrowPathIcon } from '@heroicons/vue/24/outline'
+import { runPlugin } from './composables/useAI'
 import TextPreview    from './components/TextPreview.vue'
 import ElaboratedText from './components/ElaboratedText.vue'
 import PluginPanel    from './components/PluginPanel.vue'
 import SettingsPanel  from './components/SettingsPanel.vue'
-import { useSettings }     from './composables/useSettings'
+import { useSettings }    from './composables/useSettings'
+import { useI18n }        from './composables/useI18n'
 import { useSessions }     from './composables/useSessions'
 import { useUpdateCheck }  from './composables/useUpdateCheck'
 import type { AppSettings, AIProvider } from '../shared/types'
 
 const { settings, load } = useSettings()
+const { t } = useI18n()
 const { save: saveSession, logout, current: currentSession, initWithKey } = useSessions()
 const { updateAvailableVersion, checkOnStartup } = useUpdateCheck()
 
@@ -185,6 +215,39 @@ function resetSession() {
   selectionText.value  = ''
   elaboratedText.value = ''
   hasTarget.value      = false
+}
+
+// ── Refine ────────────────────────────────────────────────────────────────────
+const showRefine        = ref(false)
+const refineInstruction = ref('')
+const refineLoading     = ref(false)
+const refineError       = ref('')
+
+async function submitRefine() {
+  if (!refineInstruction.value.trim() || refineLoading.value) return
+  const text = elaboratedText.value || selectionText.value
+  if (!text) return
+  refineLoading.value = true
+  refineError.value   = ''
+  try {
+    const result = await runPlugin(
+      {
+        name: 'refine', label: [{ en: 'Refine' }], enabled: true,
+        prompt: 'Take the following text and apply these instructions. Return only the refined text, no explanations:\n\nText:\n{{context}}\n\nInstructions:\n{{option}}',
+        options: refineInstruction.value.trim(),
+      },
+      refineInstruction.value.trim(),
+      text,
+      settings.value,
+    )
+    elaboratedText.value = result
+    showRefine.value     = false
+    refineInstruction.value = ''
+  } catch (e) {
+    refineError.value = e instanceof Error ? e.message : 'Error'
+  } finally {
+    refineLoading.value = false
+  }
 }
 
 function pasteBack() {

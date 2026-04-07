@@ -62,7 +62,7 @@ export async function fetchOllamaModels(baseUrl: string): Promise<string[]> {
 
 // ─── Provider implementations ─────────────────────────────────────────────────
 
-async function callGemini(prompt: string, cfg: { apiKey: string; model: string }): Promise<string> {
+async function callGemini(prompt: string, cfg: { apiKey: string; model: string; temperature: number; maxTokens: number }): Promise<string> {
   if (!cfg.apiKey) throw new AIError('errNoApiKey')
   const res = await wrapFetch(fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${cfg.model}:generateContent?key=${cfg.apiKey}`,
@@ -71,7 +71,7 @@ async function callGemini(prompt: string, cfg: { apiKey: string; model: string }
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.3 },
+        generationConfig: { temperature: cfg.temperature, maxOutputTokens: cfg.maxTokens },
       }),
     },
   ))
@@ -85,11 +85,16 @@ async function callGemini(prompt: string, cfg: { apiKey: string; model: string }
   return text.trim()
 }
 
-async function callOllama(prompt: string, cfg: { baseUrl: string; model: string }): Promise<string> {
+async function callOllama(prompt: string, cfg: { baseUrl: string; model: string; temperature: number; topP: number; maxTokens: number }): Promise<string> {
   const res = await wrapFetch(fetch(`${cfg.baseUrl}/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: cfg.model, prompt, stream: false }),
+    body: JSON.stringify({
+      model: cfg.model,
+      prompt,
+      stream: false,
+      options: { temperature: cfg.temperature, top_p: cfg.topP, num_predict: cfg.maxTokens },
+    }),
   }))
   if (!res.ok) throw new AIError('errApi', `Ollama ${res.status}`)
   const data = await res.json() as { response?: string }
@@ -97,12 +102,12 @@ async function callOllama(prompt: string, cfg: { baseUrl: string; model: string 
   return data.response.trim()
 }
 
-async function callOpenRouter(prompt: string, cfg: { apiKey: string; model: string }): Promise<string> {
+async function callOpenRouter(prompt: string, cfg: { apiKey: string; model: string; temperature: number; maxTokens: number }): Promise<string> {
   if (!cfg.apiKey) throw new AIError('errNoApiKey')
   const res = await wrapFetch(fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.apiKey}` },
-    body: JSON.stringify({ model: cfg.model, messages: [{ role: 'user', content: prompt }] }),
+    body: JSON.stringify({ model: cfg.model, messages: [{ role: 'user', content: prompt }], temperature: cfg.temperature, max_tokens: cfg.maxTokens }),
   }))
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as { error?: { message?: string } }
@@ -114,7 +119,7 @@ async function callOpenRouter(prompt: string, cfg: { apiKey: string; model: stri
   return text.trim()
 }
 
-async function callAnthropic(prompt: string, cfg: { apiKey: string; model: string }): Promise<string> {
+async function callAnthropic(prompt: string, cfg: { apiKey: string; model: string; temperature: number; maxTokens: number }): Promise<string> {
   if (!cfg.apiKey) throw new AIError('errNoApiKey')
   const res = await wrapFetch(fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -125,7 +130,8 @@ async function callAnthropic(prompt: string, cfg: { apiKey: string; model: strin
     },
     body: JSON.stringify({
       model: cfg.model,
-      max_tokens: 2048,
+      max_tokens: cfg.maxTokens,
+      temperature: cfg.temperature,
       messages: [{ role: 'user', content: prompt }],
     }),
   }))
@@ -139,12 +145,12 @@ async function callAnthropic(prompt: string, cfg: { apiKey: string; model: strin
   return text.trim()
 }
 
-async function callOpenAI(prompt: string, cfg: { apiKey: string; model: string }): Promise<string> {
+async function callOpenAI(prompt: string, cfg: { apiKey: string; model: string; temperature: number; maxTokens: number }): Promise<string> {
   if (!cfg.apiKey) throw new AIError('errNoApiKey')
   const res = await wrapFetch(fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.apiKey}` },
-    body: JSON.stringify({ model: cfg.model, messages: [{ role: 'user', content: prompt }] }),
+    body: JSON.stringify({ model: cfg.model, messages: [{ role: 'user', content: prompt }], temperature: cfg.temperature, max_tokens: cfg.maxTokens }),
   }))
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as { error?: { message?: string } }

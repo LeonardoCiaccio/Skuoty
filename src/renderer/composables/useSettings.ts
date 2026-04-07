@@ -6,7 +6,13 @@ function merge(saved: Partial<AppSettings>): AppSettings {
   return {
     ...DEFAULT_SETTINGS,
     ...saved,
-    providers: { ...DEFAULT_SETTINGS.providers, ...(saved.providers ?? {}) },
+    providers: {
+      gemini:     { ...DEFAULT_SETTINGS.providers.gemini,     ...(saved.providers?.gemini     ?? {}) },
+      ollama:     { ...DEFAULT_SETTINGS.providers.ollama,     ...(saved.providers?.ollama     ?? {}) },
+      openrouter: { ...DEFAULT_SETTINGS.providers.openrouter, ...(saved.providers?.openrouter ?? {}) },
+      anthropic:  { ...DEFAULT_SETTINGS.providers.anthropic,  ...(saved.providers?.anthropic  ?? {}) },
+      openai:     { ...DEFAULT_SETTINGS.providers.openai,     ...(saved.providers?.openai     ?? {}) },
+    },
     plugins:   saved.plugins ?? [],
     theme:     saved.theme === 'light' ? 'light' : 'dark',
   }

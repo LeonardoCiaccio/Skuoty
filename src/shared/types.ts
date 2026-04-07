@@ -55,11 +55,11 @@ export interface SkuotyPlugin {
 // ─── AI Providers ──────────────────────────────────────────────────────────────
 export type AIProvider = 'gemini' | 'ollama' | 'openrouter' | 'anthropic' | 'openai'
 
-export interface GeminiConfig     { apiKey: string; model: string }
-export interface OllamaConfig     { baseUrl: string; model: string }
-export interface OpenRouterConfig { apiKey: string; model: string }
-export interface AnthropicConfig  { apiKey: string; model: string }
-export interface OpenAIConfig     { apiKey: string; model: string }
+export interface GeminiConfig     { apiKey: string; model: string; temperature: number; maxTokens: number }
+export interface OllamaConfig     { baseUrl: string; model: string; temperature: number; topP: number; maxTokens: number }
+export interface OpenRouterConfig { apiKey: string; model: string; temperature: number; maxTokens: number }
+export interface AnthropicConfig  { apiKey: string; model: string; temperature: number; maxTokens: number }
+export interface OpenAIConfig     { apiKey: string; model: string; temperature: number; maxTokens: number }
 
 export interface AIProviderConfigs {
   gemini:     GeminiConfig
@@ -84,11 +84,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
   theme:      'dark',
   aiProvider: 'gemini',
   providers: {
-    gemini:     { apiKey: '',                        model: 'gemini-2.0-flash' },
-    ollama:     { baseUrl: 'http://localhost:11434', model: 'llama3.2' },
-    openrouter: { apiKey: '',                        model: 'openai/gpt-4o-mini' },
-    anthropic:  { apiKey: '',                        model: 'claude-haiku-4-5-20251001' },
-    openai:     { apiKey: '',                        model: 'gpt-4o-mini' },
+    gemini:     { apiKey: '',                        model: 'gemini-2.0-flash',        temperature: 0.3, maxTokens: 1024 },
+    ollama:     { baseUrl: 'http://localhost:11434', model: 'llama3.2',               temperature: 0.3, maxTokens: 1024, topP: 0.9 },
+    openrouter: { apiKey: '',                        model: 'openai/gpt-4o-mini',      temperature: 0.3, maxTokens: 1024 },
+    anthropic:  { apiKey: '',                        model: 'claude-haiku-4-5-20251001', temperature: 0.3, maxTokens: 1024 },
+    openai:     { apiKey: '',                        model: 'gpt-4o-mini',             temperature: 0.3, maxTokens: 1024 },
   },
   plugins: [
     {

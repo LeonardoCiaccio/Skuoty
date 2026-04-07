@@ -17,6 +17,22 @@
 
       <div class="absolute bottom-2 right-2 flex gap-1">
         <button
+          v-if="modelValue || hasTarget"
+          @click="$emit('refine')"
+          class="p-1.5 rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] transition-colors text-[var(--text-second)] hover:text-[#6366f1]"
+          :title="t('refine')"
+        >
+          <ChatBubbleLeftEllipsisIcon class="w-3.5 h-3.5" />
+        </button>
+        <button
+          v-if="modelValue"
+          @click="$emit('update:modelValue', '')"
+          class="p-1.5 rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] transition-colors text-[var(--text-second)] hover:text-[var(--color-danger)]"
+          :title="t('clearOutput')"
+        >
+          <BackspaceIcon class="w-3.5 h-3.5" />
+        </button>
+        <button
           @click="copy"
           :disabled="!modelValue"
           class="p-1.5 rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-[var(--text-second)] hover:text-[var(--text-primary)]"
@@ -49,7 +65,7 @@
 <script setup lang="ts">
 
 import { computed } from 'vue'
-import { ClipboardDocumentIcon, ArrowUturnLeftIcon, XMarkIcon } from '@heroicons/vue/24/outline'
+import { ClipboardDocumentIcon, ArrowUturnLeftIcon, XMarkIcon, BackspaceIcon, ChatBubbleLeftEllipsisIcon } from '@heroicons/vue/24/outline'
 import { useI18n } from '../composables/useI18n'
 
 const props = defineProps<{ modelValue: string; hasTarget: boolean }>()
@@ -58,6 +74,7 @@ const emit = defineEmits<{
   'paste-back': []
   'copy-done': []
   'reset': []
+  'refine': []
 }>()
 
 const { t } = useI18n()
