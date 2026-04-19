@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/skuoty-no-bg.png" alt="Skuoty Logo" width="96" />
+  <img src="docs/assets/skuoty-no-bg.png" alt="Skuoty Logo" width="96" />
   <h1>Skuoty</h1>
   <p><strong>AI-powered text processor triggered by a double Ctrl+C</strong></p>
 
@@ -13,7 +13,7 @@
 
   <br />
 
-  <img src="assets/demo.gif" alt="Skuoty in action" width="680" />
+  <img src="docs/assets/demo.gif" alt="Skuoty in action" width="680" />
 
   <br />
 </div>
