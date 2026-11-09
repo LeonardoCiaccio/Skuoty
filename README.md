@@ -97,7 +97,7 @@ Download the latest release from the [Releases page](https://github.com/Leonardo
 
 | Platform | File |
 |----------|------|
-| Windows | `Skuoty Setup x.x.x.exe` (installer) or `Skuoty x.x.x.exe` (portable) |
+| Windows | `Skuoty-Setup-x.x.x.exe` (installer) or `Skuoty-x.x.x.exe` (portable) |
 | Linux (Debian/Ubuntu) | `skuoty_x.x.x_amd64.deb` |
 | Linux (universal) | `Skuoty-x.x.x.AppImage` |
 | macOS | `Skuoty-x.x.x.dmg` |

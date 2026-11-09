@@ -75,6 +75,12 @@
       ],
       "icon": "docs/assets/skuoty.png"
     },
+    "nsis": {
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}.${ext}"
+    },
     "mac": {
       "target": [
         "dmg"
