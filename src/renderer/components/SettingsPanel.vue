@@ -131,6 +131,19 @@
                   </div>
                   <p v-if="ollamaFetchError" class="text-xs text-[var(--color-danger)]">{{ ollamaFetchError }}</p>
                 </div>
+                <!-- Thinking / reasoning -->
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                  <button
+                    type="button"
+                    @click="settings.providers.ollama.thinking = !settings.providers.ollama.thinking"
+                    :class="['w-7 h-4 rounded-full transition-colors shrink-0', settings.providers.ollama.thinking ? 'bg-[#6366f1]' : 'bg-[var(--bg-hover)]']"
+                  >
+                    <span :class="['block w-3 h-3 rounded-full bg-white transition-transform mx-0.5', settings.providers.ollama.thinking ? 'translate-x-3' : 'translate-x-0']" />
+                  </button>
+                  <span class="text-xs text-[var(--text-muted)]">{{ t('thinking') }}</span>
+                </label>
+                <p class="text-[10px] text-[var(--text-faint)] -mt-1">{{ t('thinkingHint') }}</p>
+                <p v-if="settings.providers.ollama.thinking && settings.providers.ollama.maxTokens < 4096" class="text-[10px] text-[var(--color-danger)] -mt-1">{{ t('thinkingTokensWarn') }}</p>
                 <!-- Temperature -->
                 <div class="flex flex-col gap-0.5">
                   <div class="flex justify-between">
@@ -205,6 +218,19 @@
                   </p>
                   <p v-else class="text-[10px] text-[var(--text-faint)]">{{ t('unslothModelHint') }}</p>
                 </div>
+                <!-- Thinking / reasoning -->
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                  <button
+                    type="button"
+                    @click="settings.providers.unsloth.thinking = !settings.providers.unsloth.thinking"
+                    :class="['w-7 h-4 rounded-full transition-colors shrink-0', settings.providers.unsloth.thinking ? 'bg-[#6366f1]' : 'bg-[var(--bg-hover)]']"
+                  >
+                    <span :class="['block w-3 h-3 rounded-full bg-white transition-transform mx-0.5', settings.providers.unsloth.thinking ? 'translate-x-3' : 'translate-x-0']" />
+                  </button>
+                  <span class="text-xs text-[var(--text-muted)]">{{ t('thinking') }}</span>
+                </label>
+                <p class="text-[10px] text-[var(--text-faint)] -mt-1">{{ t('thinkingHint') }}</p>
+                <p v-if="settings.providers.unsloth.thinking && settings.providers.unsloth.maxTokens < 4096" class="text-[10px] text-[var(--color-danger)] -mt-1">{{ t('thinkingTokensWarn') }}</p>
                 <!-- Server-recommended sampling -->
                 <label class="flex items-center gap-2 cursor-pointer select-none">
                   <button

@@ -73,7 +73,8 @@ export interface SkuotyPlugin {
 export type AIProvider = 'gemini' | 'ollama' | 'openrouter' | 'anthropic' | 'openai' | 'unsloth'
 
 export interface GeminiConfig     { apiKey: string; model: string; temperature: number; maxTokens: number }
-export interface OllamaConfig     { baseUrl: string; model: string; temperature: number; topP: number; maxTokens: number }
+/** `thinking`: reasoning for models that support it (Qwen3, DeepSeek-R1, gpt-oss…). Off = faster. */
+export interface OllamaConfig     { baseUrl: string; model: string; temperature: number; topP: number; maxTokens: number; thinking: boolean }
 export interface OpenRouterConfig { apiKey: string; model: string; temperature: number; maxTokens: number }
 export interface AnthropicConfig  { apiKey: string; model: string; temperature: number; maxTokens: number }
 export interface OpenAIConfig     { apiKey: string; model: string; temperature: number; maxTokens: number }
@@ -91,6 +92,8 @@ export interface UnslothConfig {
   maxTokens:      number
   serverSampling: boolean
   timeoutSec:     number
+  /** Reasoning ("thinking") for models that support it (e.g. Qwen3.5). Off = faster, no tokens spent on reasoning. */
+  thinking:       boolean
 }
 
 export interface AIProviderConfigs {
@@ -118,11 +121,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
   aiProvider: 'gemini',
   providers: {
     gemini:     { apiKey: '',                        model: 'gemini-2.0-flash',        temperature: 0.3, maxTokens: 1024 },
-    ollama:     { baseUrl: 'http://localhost:11434', model: 'llama3.2',               temperature: 0.3, maxTokens: 1024, topP: 0.9 },
+    ollama:     { baseUrl: 'http://localhost:11434', model: 'llama3.2',               temperature: 0.3, maxTokens: 1024, topP: 0.9, thinking: false },
     openrouter: { apiKey: '',                        model: 'openai/gpt-4o-mini',      temperature: 0.3, maxTokens: 1024 },
     anthropic:  { apiKey: '',                        model: 'claude-haiku-4-5-20251001', temperature: 0.3, maxTokens: 1024 },
     openai:     { apiKey: '',                        model: 'gpt-4o-mini',             temperature: 0.3, maxTokens: 1024 },
-    unsloth:    { baseUrl: 'http://localhost:8888',  apiKey: '', model: '', temperature: 0.3, topP: 0.9, maxTokens: 1024, serverSampling: false, timeoutSec: 120 },
+    unsloth:    { baseUrl: 'http://localhost:8888',  apiKey: '', model: '', temperature: 0.3, topP: 0.9, maxTokens: 1024, serverSampling: false, timeoutSec: 120, thinking: false },
   },
   plugins: [
     {

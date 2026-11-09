@@ -36,6 +36,7 @@ It lives in the system tray and stays out of your way until you need it.
 - **Multiple AI providers** — Gemini, OpenAI, Anthropic, OpenRouter, plus local models via Ollama (no API key required) or Unsloth Studio
 - **Plugin system** — define your own text transformations with a simple JSON structure and prompt templates
 - **Encrypted sessions** — all settings and API keys are stored encrypted on disk with AES-256-GCM + PBKDF2; no data is ever sent except to the AI provider you choose
+- **Thinking switch** — turn reasoning on/off for local reasoning models (Ollama, Unsloth); off by default for fast answers
 - **Multi-session support** — create multiple profiles, each protected by its own password
 - **Export / Import** — back up and restore your configuration with password encryption
 - **Paste-back** — the result is pasted directly into the original window (Windows)
@@ -69,10 +70,22 @@ Ollama and Unsloth Studio run models fully locally, for private usage.
    - **API key** — the `sk-unsloth-…` key
    - **Model** — press refresh to load the models from `GET /v1/models`; models already loaded in memory are marked with ●
    - **Use model-recommended sampling** — lets Unsloth apply the model's recommended temperature/top-p; turn it off to set them manually
+   - **Thinking (reasoning)** — off by default (sends `enable_thinking: false`); see below
    - **Max tokens** and **Timeout** — raise the timeout for large local models
 4. Press **Test** to verify the connection.
 
 Requests to Unsloth go through Skuoty's main process, so Studio's CORS settings don't need to be changed.
+
+### Thinking (reasoning) models
+
+Many local models — Qwen3 / Qwen3.5, DeepSeek-R1, gpt-oss, Gemma 4 — reason before answering by default. For Skuoty's tasks (translate, summarize, rewrite, fix grammar) this is rarely useful: answers get much slower, and the reasoning tokens count against **Max tokens**, so the answer can be cut off.
+
+**Ollama** and **Unsloth** therefore have a **Thinking** switch, **off by default**:
+
+- **Off** — the model answers directly (`think: false` for Ollama, `enable_thinking: false` for Unsloth)
+- **On** — useful for complex custom plugins; set **Max tokens** to at least 4096
+- Models without thinking support work normally: if Ollama rejects the option, Skuoty retries without it
+- If the token limit runs out mid-reasoning, Skuoty shows a *response cut off* error instead of an empty result
 
 ---
 

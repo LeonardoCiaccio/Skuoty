@@ -1,4 +1,4 @@
-import type { AppSettings, SkuotyPlugin, AIProvider, UnslothConfig } from '../../shared/types'
+import type { AppSettings, SkuotyPlugin, AIProvider, UnslothConfig, OllamaConfig } from '../../shared/types'
 
 /** Error thrown by AI providers — has a translatable `code` key. */
 export class AIError extends Error {
@@ -125,6 +125,8 @@ async function callUnsloth(prompt: string, cfg: UnslothConfig): Promise<string> 
     messages:   [{ role: 'user', content: prompt }],
     stream:     false,
     max_tokens: cfg.maxTokens,
+    // Qwen3.5 & co. reason by default; reasoning tokens count against max_tokens.
+    enable_thinking: cfg.thinking === true,
   }
   if (!cfg.serverSampling) {
     body.temperature = cfg.temperature
@@ -132,11 +134,16 @@ async function callUnsloth(prompt: string, cfg: UnslothConfig): Promise<string> 
   }
   const timeoutMs = Math.max(10, Number(cfg.timeoutSec) || 120) * 1000
   const data = await unslothRequest(cfg, '/chat/completions', 'POST', body, timeoutMs) as
-    { choices?: { message?: { content?: string } }[] } | null
-  let text = data?.choices?.[0]?.message?.content ?? ''
+    { choices?: { message?: { content?: string }; finish_reason?: string }[] } | null
+  const choice = data?.choices?.[0]
+  let text = choice?.message?.content ?? ''
   // Reasoning models may inline their chain of thought — keep only the final answer.
-  text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
-  if (!text) throw new AIError('errEmptyResponse')
+  // An unclosed <think> means the token budget ran out while still reasoning.
+  text = text.replace(/<think>[\s\S]*?(<\/think>|$)/gi, '').trim()
+  if (!text) {
+    if (choice?.finish_reason === 'length') throw new AIError('errTruncated')
+    throw new AIError('errEmptyResponse')
+  }
   return text
 }
 
@@ -165,21 +172,42 @@ async function callGemini(prompt: string, cfg: { apiKey: string; model: string; 
   return text.trim()
 }
 
-async function callOllama(prompt: string, cfg: { baseUrl: string; model: string; temperature: number; topP: number; maxTokens: number }): Promise<string> {
-  const res = await wrapFetch(fetch(`${cfg.baseUrl}/api/generate`, {
+async function callOllama(prompt: string, cfg: OllamaConfig): Promise<string> {
+  const send = (withThink: boolean) => wrapFetch(fetch(`${cfg.baseUrl}/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: cfg.model,
       prompt,
       stream: false,
+      // Thinking models (Qwen3, DeepSeek-R1, gpt-oss…) reason by default; `think` turns it on/off.
+      ...(withThink ? { think: cfg.thinking === true } : {}),
       options: { temperature: cfg.temperature, top_p: cfg.topP, num_predict: cfg.maxTokens },
     }),
   }))
-  if (!res.ok) throw new AIError('errApi', `Ollama ${res.status}`)
-  const data = await res.json() as { response?: string }
-  if (!data.response) throw new AIError('errEmptyResponse')
-  return data.response.trim()
+
+  let res = await send(true)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: string }
+    // Models without thinking support (or older Ollama versions) may reject `think`: retry without it.
+    if (/think/i.test(err.error ?? '')) {
+      res = await send(false)
+      if (!res.ok) {
+        const err2 = await res.json().catch(() => ({})) as { error?: string }
+        throw new AIError('errApi', err2.error ?? `Ollama ${res.status}`)
+      }
+    } else {
+      throw new AIError('errApi', err.error ?? `Ollama ${res.status}`)
+    }
+  }
+  const data = await res.json() as { response?: string; done_reason?: string }
+  // Older versions inline the reasoning in the response; an unclosed <think> means the budget ran out.
+  const text = (data.response ?? '').replace(/<think>[\s\S]*?(<\/think>|$)/gi, '').trim()
+  if (!text) {
+    if (data.done_reason === 'length') throw new AIError('errTruncated')
+    throw new AIError('errEmptyResponse')
+  }
+  return text
 }
 
 async function callOpenRouter(prompt: string, cfg: { apiKey: string; model: string; temperature: number; maxTokens: number }): Promise<string> {
