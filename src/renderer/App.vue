@@ -125,6 +125,7 @@ const aiProviderOptions = computed<{ id: AIProvider; name: string; model: string
   { id: 'openrouter', name: 'OpenRouter',  model: settings.value.providers.openrouter.model },
   { id: 'anthropic',  name: 'Anthropic',   model: settings.value.providers.anthropic.model  },
   { id: 'openai',     name: 'OpenAI',      model: settings.value.providers.openai.model     },
+  { id: 'unsloth',    name: 'Unsloth',     model: settings.value.providers.unsloth.model || '—' },
 ])
 
 const currentAiLabel = computed(() => {

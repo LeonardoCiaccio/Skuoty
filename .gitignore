@@ -3,7 +3,9 @@ node_modules/
 
 # Build output
 dist/
+out/
 release/
+.cache/
 
 # Electron builder
 dist_electron/
@@ -27,6 +29,7 @@ desktop.ini
 
 # Claude Code
 .claude/
+CLAUDE.md
 
 # Editor
 .vscode/

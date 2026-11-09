@@ -33,7 +33,7 @@ It lives in the system tray and stays out of your way until you need it.
 ## Features
 
 - **Double Ctrl+C trigger** — captures your selected text from any application via a global keyboard hook
-- **Multiple AI providers** — Gemini, OpenAI, Anthropic, OpenRouter, and Ollama (local, no API key required)
+- **Multiple AI providers** — Gemini, OpenAI, Anthropic, OpenRouter, plus local models via Ollama (no API key required) or Unsloth Studio
 - **Plugin system** — define your own text transformations with a simple JSON structure and prompt templates
 - **Encrypted sessions** — all settings and API keys are stored encrypted on disk with AES-256-GCM + PBKDF2; no data is ever sent except to the AI provider you choose
 - **Multi-session support** — create multiple profiles, each protected by its own password
@@ -56,8 +56,23 @@ It lives in the system tray and stays out of your way until you need it.
 | [OpenAI](https://platform.openai.com) | API key | `gpt-4o-mini` |
 | [Anthropic](https://console.anthropic.com) | API key | `claude-haiku-4-5-20251001` |
 | [OpenRouter](https://openrouter.ai) | API key | `openai/gpt-4o-mini` |
+| [Unsloth Studio](https://unsloth.ai/docs/basics/api) | Local server running + API key | picked from the server's model list |
 
-Ollama is the recommended provider for fully local, private usage.
+Ollama and Unsloth Studio run models fully locally, for private usage.
+
+### Unsloth Studio setup
+
+1. Start Unsloth Studio (or `unsloth run --model <model>`). The console prints the server address and an API key.
+2. If needed, create a key in **Studio → Settings → API** (format `sk-unsloth-…`, shown only once).
+3. In Skuoty, go to **⚙ Settings → AI → Unsloth** and fill in:
+   - **Base URL** — usually `http://localhost:8888` (or `:8000`); a trailing `/v1` is accepted
+   - **API key** — the `sk-unsloth-…` key
+   - **Model** — press refresh to load the models from `GET /v1/models`; models already loaded in memory are marked with ●
+   - **Use model-recommended sampling** — lets Unsloth apply the model's recommended temperature/top-p; turn it off to set them manually
+   - **Max tokens** and **Timeout** — raise the timeout for large local models
+4. Press **Test** to verify the connection.
+
+Requests to Unsloth go through Skuoty's main process, so Studio's CORS settings don't need to be changed.
 
 ---
 
@@ -98,6 +113,10 @@ sudo dpkg -i skuoty_*_amd64.deb
 - [Ollama](https://ollama.com) installed and running
 - At least one model pulled, e.g. `ollama pull llama3.2`
 
+### For local AI (Unsloth Studio)
+- [Unsloth Studio](https://unsloth.ai) installed and running, with its external API available (recent versions)
+- An API key from Studio → Settings → API
+
 ### Windows only
 - PowerShell (required for paste-back functionality — included in all modern Windows versions)
 
@@ -107,7 +126,7 @@ sudo dpkg -i skuoty_*_amd64.deb
 
 1. **Launch Skuoty** — a splash screen will ask you to create your first session
 2. **Create a session** — give it a name and a password (min. 6 characters); your settings will be encrypted with this password
-3. **Configure an AI provider** — go to ⚙ Settings → AI and enter your API key or configure Ollama
+3. **Configure an AI provider** — go to ⚙ Settings → AI and enter your API key or configure Ollama / Unsloth Studio
 4. **Select text** in any application and **press Ctrl+C twice**
 5. **Choose a plugin** from the toolbar and wait for the AI response
 6. **Copy or paste** the result back

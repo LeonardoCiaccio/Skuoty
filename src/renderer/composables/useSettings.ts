@@ -12,6 +12,7 @@ function merge(saved: Partial<AppSettings>): AppSettings {
       openrouter: { ...DEFAULT_SETTINGS.providers.openrouter, ...(saved.providers?.openrouter ?? {}) },
       anthropic:  { ...DEFAULT_SETTINGS.providers.anthropic,  ...(saved.providers?.anthropic  ?? {}) },
       openai:     { ...DEFAULT_SETTINGS.providers.openai,     ...(saved.providers?.openai     ?? {}) },
+      unsloth:    { ...DEFAULT_SETTINGS.providers.unsloth,    ...(saved.providers?.unsloth    ?? {}) },
     },
     plugins:   saved.plugins ?? [],
     theme:     saved.theme === 'light' ? 'light' : 'dark',

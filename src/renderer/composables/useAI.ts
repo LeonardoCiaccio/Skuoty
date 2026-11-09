@@ -1,4 +1,4 @@
-import type { AppSettings, SkuotyPlugin, AIProvider } from '../../shared/types'
+import type { AppSettings, SkuotyPlugin, AIProvider, UnslothConfig } from '../../shared/types'
 
 /** Error thrown by AI providers — has a translatable `code` key. */
 export class AIError extends Error {
@@ -31,6 +31,7 @@ export async function runPlugin(
     case 'openrouter': return callOpenRouter(prompt, settings.providers.openrouter)
     case 'anthropic':  return callAnthropic(prompt, settings.providers.anthropic)
     case 'openai':     return callOpenAI(prompt, settings.providers.openai)
+    case 'unsloth':    return callUnsloth(prompt, settings.providers.unsloth)
     default:           throw new Error('Unknown AI provider')
   }
 }
@@ -48,6 +49,7 @@ export async function testProvider(
     case 'openrouter': return callOpenRouter(probe, cfg.openrouter)
     case 'anthropic':  return callAnthropic(probe, cfg.anthropic)
     case 'openai':     return callOpenAI(probe, cfg.openai)
+    case 'unsloth':    return callUnsloth(probe, cfg.unsloth)
     default:           throw new Error('Unknown provider')
   }
 }
@@ -58,6 +60,84 @@ export async function fetchOllamaModels(baseUrl: string): Promise<string[]> {
   if (!res.ok) throw new AIError('errApi', `Ollama ${res.status}`)
   const data = await res.json() as { models: { name: string }[] }
   return (data.models ?? []).map((m) => m.name)
+}
+
+// ─── Unsloth Studio ───────────────────────────────────────────────────────────
+// Requests go through the main process: Unsloth Studio's CORS allowlist only admits
+// its own UI origins, so a direct fetch from the renderer would be blocked.
+
+export interface UnslothModel { id: string; loaded: boolean }
+
+function unslothUrl(baseUrl: string, path: string): string {
+  // Accept both "http://host:8888" and "http://host:8888/v1"
+  const root = baseUrl.trim().replace(/\/+$/, '').replace(/\/v1$/, '')
+  return `${root}/v1${path}`
+}
+
+function unslothHeaders(apiKey: string): Record<string, string> {
+  const h: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (apiKey.trim()) h.Authorization = `Bearer ${apiKey.trim()}`
+  return h
+}
+
+async function unslothRequest(
+  cfg: Pick<UnslothConfig, 'baseUrl' | 'apiKey'>,
+  path: string,
+  method: 'GET' | 'POST',
+  body?: unknown,
+  timeoutMs = 15_000,
+): Promise<unknown> {
+  if (!cfg.baseUrl.trim()) throw new AIError('errNetwork', 'Base URL not set')
+  const res = await window.skuoty.httpRequest({
+    url: unslothUrl(cfg.baseUrl, path),
+    method,
+    headers: unslothHeaders(cfg.apiKey),
+    body: body === undefined ? undefined : JSON.stringify(body),
+    timeoutMs,
+  })
+  if (res.networkError) throw new AIError('errNetwork', res.networkError)
+  let data: unknown = null
+  try { data = res.body ? JSON.parse(res.body) : null } catch { /* non-JSON body */ }
+  if (!res.ok) {
+    if (res.status === 401 || res.status === 403) throw new AIError('errUnauthorized', `Unsloth ${res.status}`)
+    const d = data as { error?: { message?: string } | string; detail?: unknown } | null
+    const msg = typeof d?.error === 'string' ? d.error
+      : d?.error?.message
+      ?? (typeof d?.detail === 'string' ? d.detail : d?.detail ? JSON.stringify(d.detail) : '')
+    throw new AIError('errApi', msg || `Unsloth ${res.status}`)
+  }
+  return data
+}
+
+/** Lists models known to Unsloth Studio (GET /v1/models). Loaded models come first. */
+export async function fetchUnslothModels(cfg: Pick<UnslothConfig, 'baseUrl' | 'apiKey'>): Promise<UnslothModel[]> {
+  const data = await unslothRequest(cfg, '/models', 'GET') as { data?: { id?: string; loaded?: boolean; status?: string }[] } | null
+  const models = (data?.data ?? [])
+    .filter((m): m is { id: string; loaded?: boolean; status?: string } => typeof m?.id === 'string' && !!m.id)
+    .map((m) => ({ id: m.id, loaded: m.loaded === true || m.status === 'loaded' }))
+  return models.sort((a, b) => Number(b.loaded) - Number(a.loaded) || a.id.localeCompare(b.id))
+}
+
+async function callUnsloth(prompt: string, cfg: UnslothConfig): Promise<string> {
+  if (!cfg.model.trim()) throw new AIError('errNoModel')
+  const body: Record<string, unknown> = {
+    model:      cfg.model.trim(),
+    messages:   [{ role: 'user', content: prompt }],
+    stream:     false,
+    max_tokens: cfg.maxTokens,
+  }
+  if (!cfg.serverSampling) {
+    body.temperature = cfg.temperature
+    body.top_p       = cfg.topP
+  }
+  const timeoutMs = Math.max(10, Number(cfg.timeoutSec) || 120) * 1000
+  const data = await unslothRequest(cfg, '/chat/completions', 'POST', body, timeoutMs) as
+    { choices?: { message?: { content?: string } }[] } | null
+  let text = data?.choices?.[0]?.message?.content ?? ''
+  // Reasoning models may inline their chain of thought — keep only the final answer.
+  text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
+  if (!text) throw new AIError('errEmptyResponse')
+  return text
 }
 
 // ─── Provider implementations ─────────────────────────────────────────────────

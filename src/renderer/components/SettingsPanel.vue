@@ -158,6 +158,99 @@
               </div>
             </template>
 
+            <!-- Unsloth Studio fields -->
+            <template v-else-if="p.id === 'unsloth'">
+              <div class="flex flex-col gap-2" :class="settings.aiProvider !== p.id ? 'opacity-40 pointer-events-none' : ''">
+                <div class="flex items-start gap-1.5">
+                  <p class="text-[10px] text-[var(--text-faint)] flex-1">{{ t('unslothIntro') }}</p>
+                  <button
+                    @click="openUnslothDocs"
+                    class="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors shrink-0"
+                    title="Help"
+                  ><QuestionMarkCircleIcon class="w-4 h-4" /></button>
+                </div>
+                <!-- Base URL -->
+                <div class="flex flex-col gap-0.5">
+                  <label class="text-xs text-[var(--text-muted)]">{{ t('baseUrl') }}</label>
+                  <input v-model="settings.providers.unsloth.baseUrl" type="text" placeholder="http://localhost:8888" class="field" :disabled="settings.aiProvider !== p.id" />
+                  <p class="text-[10px] text-[var(--text-faint)]">{{ t('unslothBaseUrlHint') }}</p>
+                </div>
+                <!-- API key -->
+                <div class="flex flex-col gap-0.5">
+                  <label class="text-xs text-[var(--text-muted)]">{{ t('apiKey') }}</label>
+                  <input v-model="settings.providers.unsloth.apiKey" type="password" placeholder="sk-unsloth-…" class="field" autocomplete="off" :disabled="settings.aiProvider !== p.id" />
+                  <p class="text-[10px] text-[var(--text-faint)]">{{ t('unslothApiKeyHint') }}</p>
+                </div>
+                <!-- Model -->
+                <div class="flex flex-col gap-0.5">
+                  <label class="text-xs text-[var(--text-muted)]">{{ t('model') }}</label>
+                  <div class="flex gap-1.5">
+                    <select v-if="unslothModels.length" v-model="settings.providers.unsloth.model" class="field flex-1 min-w-0" :disabled="settings.aiProvider !== p.id">
+                      <option v-if="settings.providers.unsloth.model && !unslothModels.some(m => m.id === settings.providers.unsloth.model)" :value="settings.providers.unsloth.model">
+                        {{ settings.providers.unsloth.model }}
+                      </option>
+                      <option v-for="m in unslothModels" :key="m.id" :value="m.id">{{ m.loaded ? '● ' : '' }}{{ m.id }}</option>
+                    </select>
+                    <input v-else v-model="settings.providers.unsloth.model" type="text" :placeholder="t('unslothModelPlaceholder')" class="field flex-1 min-w-0" :disabled="settings.aiProvider !== p.id" />
+                    <button
+                      @click="refreshUnslothModels"
+                      :disabled="settings.aiProvider !== p.id || unslothFetching"
+                      class="px-2 py-0.5 text-xs rounded bg-[var(--bg-element)] hover:bg-[var(--bg-hover)] text-[var(--text-second)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
+                      :title="t('refreshModels')"
+                    ><ArrowPathIcon class="w-3.5 h-3.5" :class="unslothFetching ? 'animate-spin' : ''" /></button>
+                  </div>
+                  <p v-if="unslothFetchError" class="text-xs text-[var(--color-danger)]">{{ unslothFetchError }}</p>
+                  <p v-else-if="unslothModels.length" class="text-[10px] text-[var(--text-faint)]">
+                    {{ t('unslothModelsFound').replace('{n}', String(unslothModels.length)).replace('{loaded}', String(unslothModels.filter(m => m.loaded).length)) }}
+                  </p>
+                  <p v-else class="text-[10px] text-[var(--text-faint)]">{{ t('unslothModelHint') }}</p>
+                </div>
+                <!-- Server-recommended sampling -->
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                  <button
+                    type="button"
+                    @click="settings.providers.unsloth.serverSampling = !settings.providers.unsloth.serverSampling"
+                    :class="['w-7 h-4 rounded-full transition-colors shrink-0', settings.providers.unsloth.serverSampling ? 'bg-[#6366f1]' : 'bg-[var(--bg-hover)]']"
+                  >
+                    <span :class="['block w-3 h-3 rounded-full bg-white transition-transform mx-0.5', settings.providers.unsloth.serverSampling ? 'translate-x-3' : 'translate-x-0']" />
+                  </button>
+                  <span class="text-xs text-[var(--text-muted)]">{{ t('unslothServerSampling') }}</span>
+                </label>
+                <p class="text-[10px] text-[var(--text-faint)] -mt-1">{{ t('unslothServerSamplingHint') }}</p>
+                <!-- Temperature / Top P (only when not using server defaults) -->
+                <template v-if="!settings.providers.unsloth.serverSampling">
+                  <div class="flex flex-col gap-0.5">
+                    <div class="flex justify-between">
+                      <label class="text-xs text-[var(--text-muted)]">{{ t('temperature') }}</label>
+                      <span class="text-xs text-[var(--text-second)] font-mono">{{ settings.providers.unsloth.temperature.toFixed(1) }}</span>
+                    </div>
+                    <input v-model.number="settings.providers.unsloth.temperature" type="range" min="0" max="2" step="0.1" class="w-full accent-[#6366f1]" />
+                    <p class="text-[10px] text-[var(--text-faint)]">{{ t('temperatureHint') }}</p>
+                  </div>
+                  <div class="flex flex-col gap-0.5">
+                    <div class="flex justify-between">
+                      <label class="text-xs text-[var(--text-muted)]">Top P</label>
+                      <span class="text-xs text-[var(--text-second)] font-mono">{{ settings.providers.unsloth.topP.toFixed(2) }}</span>
+                    </div>
+                    <input v-model.number="settings.providers.unsloth.topP" type="range" min="0" max="1" step="0.05" class="w-full accent-[#6366f1]" />
+                    <p class="text-[10px] text-[var(--text-faint)]">{{ t('topPHint') }}</p>
+                  </div>
+                </template>
+                <!-- Max tokens + timeout -->
+                <div class="flex gap-4">
+                  <div class="flex flex-col gap-0.5">
+                    <label class="text-xs text-[var(--text-muted)]">{{ t('maxTokens') }}</label>
+                    <input v-model.number="settings.providers.unsloth.maxTokens" type="number" min="64" max="32768" step="64" class="field w-28" />
+                  </div>
+                  <div class="flex flex-col gap-0.5">
+                    <label class="text-xs text-[var(--text-muted)]">{{ t('timeoutSec') }}</label>
+                    <input v-model.number="settings.providers.unsloth.timeoutSec" type="number" min="10" max="600" step="10" class="field w-28" />
+                  </div>
+                </div>
+                <p class="text-[10px] text-[var(--text-faint)] -mt-1">{{ t('maxTokensHint') }} {{ t('timeoutSecHint') }}</p>
+              </div>
+            </template>
+
             <!-- Other providers -->
             <template v-else>
               <div class="flex flex-col gap-2" :class="settings.aiProvider !== p.id ? 'opacity-40 pointer-events-none' : ''">
@@ -717,7 +810,8 @@ import { useSettings }    from '../composables/useSettings'
 import { useSessions }    from '../composables/useSessions'
 import { useI18n }        from '../composables/useI18n'
 import { useUpdateCheck } from '../composables/useUpdateCheck'
-import { testProvider, fetchOllamaModels, AIError } from '../composables/useAI'
+import { testProvider, fetchOllamaModels, fetchUnslothModels, AIError } from '../composables/useAI'
+import type { UnslothModel } from '../composables/useAI'
 import { encryptData, decryptData, isEncryptedBlob } from '../composables/useCrypto'
 import { getLabel, DEFAULT_SETTINGS } from '../../shared/types'
 import type { AIProvider, SkuotyPlugin } from '../../shared/types'
@@ -748,21 +842,23 @@ const aiProviders = [
   { id: 'openrouter', name: 'OpenRouter' },
   { id: 'anthropic',  name: 'Anthropic'  },
   { id: 'openai',     name: 'OpenAI'     },
+  { id: 'unsloth',    name: 'Unsloth'    },
 ] as const
 
 // ── AI test ───────────────────────────────────────────────────────────────────
 const testState = ref<Record<string, 'idle' | 'testing' | 'ok' | 'error'>>({
-  gemini: 'idle', ollama: 'idle', openrouter: 'idle', anthropic: 'idle', openai: 'idle',
+  gemini: 'idle', ollama: 'idle', openrouter: 'idle', anthropic: 'idle', openai: 'idle', unsloth: 'idle',
 })
 const testMsg = ref<Record<string, string>>({
-  gemini: '', ollama: '', openrouter: '', anthropic: '', openai: '',
+  gemini: '', ollama: '', openrouter: '', anthropic: '', openai: '', unsloth: '',
 })
 
 function resetProvider(provider: AIProvider) {
   const def = DEFAULT_SETTINGS.providers[provider]
-  settings.value.providers[provider] = { ...def }
+  ;(settings.value.providers as Record<AIProvider, unknown>)[provider] = { ...def }
   testState.value[provider] = 'idle'
   testMsg.value[provider] = ''
+  if (provider === 'unsloth') { unslothModels.value = []; unslothFetchError.value = '' }
 }
 
 async function runTest(provider: AIProvider) {
@@ -803,6 +899,38 @@ async function refreshOllamaModels() {
     ollamaFetching.value = false
   }
 }
+
+// ── Unsloth model refresh ─────────────────────────────────────────────────────
+const unslothModels     = ref<UnslothModel[]>([])
+const unslothFetching   = ref(false)
+const unslothFetchError = ref('')
+
+async function refreshUnslothModels() {
+  unslothFetching.value = true
+  unslothFetchError.value = ''
+  try {
+    const models = await fetchUnslothModels(settings.value.providers.unsloth)
+    unslothModels.value = models
+    const cfg = settings.value.providers.unsloth
+    // Pick a model automatically if none is set (prefer one already loaded in memory)
+    if (models.length && !cfg.model) cfg.model = (models.find(m => m.loaded) ?? models[0]).id
+  } catch (e) {
+    unslothFetchError.value = e instanceof AIError
+      ? t.value(e.code) + (e.message && e.message !== e.code ? ` (${e.message})` : '')
+      : e instanceof Error ? e.message : t.value('errNetwork')
+  } finally {
+    unslothFetching.value = false
+  }
+}
+
+function openUnslothDocs() { window.skuoty.openExternal('https://unsloth.ai/docs/basics/api') }
+
+// Auto-load the model list the first time Unsloth is shown as the active provider
+watch(
+  () => active.value === 'ai' && settings.value.aiProvider === 'unsloth',
+  (show) => { if (show && !unslothModels.value.length && !unslothFetching.value) refreshUnslothModels() },
+  { immediate: true },
+)
 
 // ── Plugin editor ─────────────────────────────────────────────────────────────
 const editorIdx   = ref<number | null>(null)

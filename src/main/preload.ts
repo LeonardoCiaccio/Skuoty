@@ -53,6 +53,7 @@ contextBridge.exposeInMainWorld('skuoty', {
   exportPlugin:   (json: string, name: string) => ipcRenderer.invoke(IPC.EXPORT_PLUGIN, json, name),
   importFromFile: ()             => ipcRenderer.invoke(IPC.IMPORT_FILE),
   openExternal:   (url: string)  => ipcRenderer.send(IPC.OPEN_EXTERNAL, url),
+  httpRequest:    (req: unknown) => ipcRenderer.invoke(IPC.HTTP_REQUEST, req),
   sessions: {
     list:   ()                         => ipcRenderer.invoke(IPC.SESSION_LIST),
     read:   (id: string)               => ipcRenderer.invoke(IPC.SESSION_READ, id),

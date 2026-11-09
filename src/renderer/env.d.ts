@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 import { AppSettings } from '../shared/types'
-import type { AIProvider } from '../shared/types'
+import type { AIProvider, HttpProxyRequest, HttpProxyResponse } from '../shared/types'
 
 declare global {
   const __APP_VERSION__: string
@@ -22,6 +22,7 @@ declare global {
       exportPlugin:   (json: string, name: string) => Promise<boolean>
       importFromFile: () => Promise<string | null>
       openExternal:   (url: string) => void
+      httpRequest:    (req: HttpProxyRequest) => Promise<HttpProxyResponse>
       sessions: {
         list:   () => Promise<{ id: string; name: string; created: number; modified: number }[]>
         read:   (id: string) => Promise<string | null>

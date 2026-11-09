@@ -10,6 +10,17 @@ const updateError            = ref(false)
 
 let checked = false
 
+/** True if version `a` is strictly greater than `b` (numeric compare of x.y.z, suffixes ignored). */
+function isNewer(a: string, b: string): boolean {
+  const parse = (v: string) => v.split('-')[0].split('.').map((n) => parseInt(n, 10) || 0)
+  const pa = parse(a), pb = parse(b)
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0)
+    if (d !== 0) return d > 0
+  }
+  return false
+}
+
 export function useUpdateCheck() {
   async function checkUpdate(): Promise<void> {
     if (updateChecking.value) return
@@ -22,7 +33,7 @@ export function useUpdateCheck() {
       const data = await res.json() as { tag_name: string }
       const latest  = data.tag_name.replace(/^v/, '')
       const current = __APP_VERSION__
-      if (latest !== current) updateAvailableVersion.value = latest
+      if (isNewer(latest, current)) updateAvailableVersion.value = latest
     } catch {
       updateError.value = true
     } finally {

@@ -18,7 +18,24 @@ export const IPC = {
   OPEN_EXTERNAL:      'shell:openExternal',
   SHOW_SPLASH:        'window:showSplash',
   EXPORT_PLUGIN:      'plugin:export',
+  HTTP_REQUEST:       'net:httpRequest',
 } as const
+
+/** Request proxied through the main process (bypasses renderer CORS — used for local servers like Unsloth Studio). */
+export interface HttpProxyRequest {
+  url:       string
+  method:    'GET' | 'POST'
+  headers?:  Record<string, string>
+  body?:     string
+  timeoutMs?: number
+}
+export interface HttpProxyResponse {
+  ok:     boolean
+  status: number
+  body:   string
+  /** Set when the request never reached the server (DNS, refused, timeout…). */
+  networkError?: string
+}
 
 // ─── i18n ──────────────────────────────────────────────────────────────────────
 /** One locale entry, e.g. {"en":"Translator"} or {"it":"Traduttore"} */
@@ -53,13 +70,28 @@ export interface SkuotyPlugin {
 }
 
 // ─── AI Providers ──────────────────────────────────────────────────────────────
-export type AIProvider = 'gemini' | 'ollama' | 'openrouter' | 'anthropic' | 'openai'
+export type AIProvider = 'gemini' | 'ollama' | 'openrouter' | 'anthropic' | 'openai' | 'unsloth'
 
 export interface GeminiConfig     { apiKey: string; model: string; temperature: number; maxTokens: number }
 export interface OllamaConfig     { baseUrl: string; model: string; temperature: number; topP: number; maxTokens: number }
 export interface OpenRouterConfig { apiKey: string; model: string; temperature: number; maxTokens: number }
 export interface AnthropicConfig  { apiKey: string; model: string; temperature: number; maxTokens: number }
 export interface OpenAIConfig     { apiKey: string; model: string; temperature: number; maxTokens: number }
+/**
+ * Unsloth Studio — local OpenAI-compatible server (`unsloth run` / Studio → Settings → API).
+ * `serverSampling`: when true, temperature/topP are not sent and Unsloth applies the
+ * recommended sampling defaults for the loaded model.
+ */
+export interface UnslothConfig {
+  baseUrl:        string
+  apiKey:         string
+  model:          string
+  temperature:    number
+  topP:           number
+  maxTokens:      number
+  serverSampling: boolean
+  timeoutSec:     number
+}
 
 export interface AIProviderConfigs {
   gemini:     GeminiConfig
@@ -67,6 +99,7 @@ export interface AIProviderConfigs {
   openrouter: OpenRouterConfig
   anthropic:  AnthropicConfig
   openai:     OpenAIConfig
+  unsloth:    UnslothConfig
 }
 
 // ─── App Settings ──────────────────────────────────────────────────────────────
@@ -89,6 +122,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     openrouter: { apiKey: '',                        model: 'openai/gpt-4o-mini',      temperature: 0.3, maxTokens: 1024 },
     anthropic:  { apiKey: '',                        model: 'claude-haiku-4-5-20251001', temperature: 0.3, maxTokens: 1024 },
     openai:     { apiKey: '',                        model: 'gpt-4o-mini',             temperature: 0.3, maxTokens: 1024 },
+    unsloth:    { baseUrl: 'http://localhost:8888',  apiKey: '', model: '', temperature: 0.3, topP: 0.9, maxTokens: 1024, serverSampling: false, timeoutSec: 120 },
   },
   plugins: [
     {

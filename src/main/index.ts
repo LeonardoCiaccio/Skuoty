@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, clipboard, screen, Tray, Menu, nativeImage, dialog, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, clipboard, screen, Tray, Menu, nativeImage, dialog, shell, net } from 'electron'
 import { spawn, spawnSync } from 'child_process'
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, unlinkSync, existsSync } from 'fs'
 import { tmpdir } from 'os'
@@ -6,6 +6,7 @@ import path from 'path'
 import { setupStore } from './store'
 import { setupHotkey } from './hotkey'
 import { IPC } from '../shared/types'
+import type { HttpProxyRequest, HttpProxyResponse } from '../shared/types'
 
 const SUPPORTED_LANGUAGES = ['en', 'it', 'es', 'fr', 'de'] as const
 
@@ -162,7 +163,7 @@ function buildTrayMenu() {
 }
 
 function createTray() {
-  const iconPath = path.join(app.getAppPath(), 'assets/skuoty.png')
+  const iconPath = path.join(app.getAppPath(), 'docs/assets/skuoty.png')
   let icon = nativeImage.createFromPath(iconPath)
   if (!icon.isEmpty()) icon = icon.resize({ width: 32, height: 32 })
   tray = new Tray(icon)
@@ -363,6 +364,31 @@ function setupIPC() {
     // Only allow https URLs to prevent arbitrary protocol execution
     if (typeof url === 'string' && url.startsWith('https://')) {
       shell.openExternal(url)
+    }
+  })
+
+  // HTTP proxy for AI servers that don't allow the renderer's origin via CORS (e.g. Unsloth Studio).
+  ipcMain.handle(IPC.HTTP_REQUEST, async (_e, req: HttpProxyRequest): Promise<HttpProxyResponse> => {
+    let url: URL
+    try { url = new URL(req?.url) } catch { return { ok: false, status: 0, body: '', networkError: 'Invalid URL' } }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return { ok: false, status: 0, body: '', networkError: 'Only http/https URLs are allowed' }
+    }
+    if (req.method !== 'GET' && req.method !== 'POST') {
+      return { ok: false, status: 0, body: '', networkError: 'Unsupported method' }
+    }
+    const timeoutMs = Math.min(Math.max(Number(req.timeoutMs) || 30_000, 1_000), 600_000)
+    try {
+      const res = await net.fetch(url.toString(), {
+        method:  req.method,
+        headers: req.headers,
+        body:    req.method === 'POST' ? req.body : undefined,
+        signal:  AbortSignal.timeout(timeoutMs),
+      })
+      return { ok: res.ok, status: res.status, body: await res.text() }
+    } catch (err) {
+      const msg = err instanceof Error ? (err.name === 'TimeoutError' ? `Timeout after ${timeoutMs / 1000}s` : err.message) : String(err)
+      return { ok: false, status: 0, body: '', networkError: msg }
     }
   })
 
